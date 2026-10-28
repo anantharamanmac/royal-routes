@@ -1,335 +1,951 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
-import { MapPin, Calendar, Users, ArrowRight, Star, ChevronDown } from "lucide-react";
-import { daysUntil } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  MapPin,
+  Calendar,
+  Users,
+  ArrowRight,
+  Star,
+  Search,
+  Train,
+  Clock,
+  ShieldCheck,
+  CheckCircle,
+  Phone,
+  Play,
+  Mail,
+  Compass,
+  Sparkles,
+  ChevronRight,
+  ExternalLink,
+  ChevronLeft,
+  Camera,
+  Heart,
+} from "lucide-react";
+import VisualRouteMap from "@/components/member/VisualRouteMap";
+import CountdownTimer from "@/components/member/CountdownTimer";
+import { daysUntil, cn } from "@/lib/utils";
 import { Timestamp } from "firebase/firestore";
 
-const DEPARTURE_DATE = new Timestamp(1766617200, 0); // 24 Dec 2026 ~21:00 IST
+const DEPARTURE_DATE = new Timestamp(1766617200, 0); // 24 Dec 2026
 
-const DESTINATIONS = [
+const POPULAR_DESTINATIONS = [
   {
-    name: "Rajasthan",
-    tagline: "Land of Kings",
-    desc: "Majestic forts, vibrant bazaars, and desert palaces await in the Pink City and beyond.",
-    highlights: ["Amber Fort", "City Palace", "Hawa Mahal", "Thar Desert"],
-    color: "from-terracotta-700 to-terracotta-500",
-    emoji: "🏯",
+    name: "Jaipur, Rajasthan",
+    tagline: "Amber Fort & City Palace",
+    image:
+      "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80",
+    days: "4 Days",
+    rating: "4.9",
   },
   {
-    name: "Delhi",
-    tagline: "The Soul of India",
-    desc: "Seven cities layered with Mughal grandeur, colonial heritage, and dynamic modernity.",
-    highlights: ["Red Fort", "Qutub Minar", "India Gate", "Chandni Chowk"],
-    color: "from-royal-800 to-royal-600",
-    emoji: "🕌",
+    name: "New & Old Delhi",
+    tagline: "Red Fort & Qutub Minar",
+    image:
+      "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=800&q=80",
+    days: "3 Days",
+    rating: "4.8",
   },
   {
-    name: "Agra",
-    tagline: "City of the Taj",
-    desc: "Home to the world's greatest monument to love — a timeless symbol of Indian splendour.",
-    highlights: ["Taj Mahal", "Agra Fort", "Fatehpur Sikri", "Mehtab Bagh"],
-    color: "from-sandstone-700 to-sandstone-500",
-    emoji: "🕍",
+    name: "Agra, Uttar Pradesh",
+    tagline: "Taj Mahal & Agra Fort",
+    image:
+      "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
+    days: "2 Days",
+    rating: "5.0",
+  },
+  {
+    name: "Jodhpur Desert Circuit",
+    tagline: "Mehrangarh Citadel & Bazaars",
+    image:
+      "https://images.unsplash.com/photo-1603288967399-28153c3065b2?auto=format&fit=crop&w=800&q=80",
+    days: "Optional",
+    rating: "4.8",
+  },
+  {
+    name: "Kollam Junction",
+    tagline: "Coastal Kerala Departure Hub",
+    image:
+      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80",
+    days: "Day 0",
+    rating: "4.9",
+  },
+];
+
+const TOUR_PACKAGES = [
+  {
+    id: "rajasthan-royal",
+    title: "Rajasthan Forts & Heritage Palace Trail",
+    destination: "Rajasthan (Jaipur)",
+    duration: "4 Days / 3 Nights",
+    originalPrice: "₹24,000",
+    price: "₹18,999",
+    discountBadge: "20% OFF",
+    rating: 5,
+    reviews: 142,
+    image:
+      "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80",
+    highlights: ["Amber Fort Elephant Ramparts", "Hawa Mahal", "City Palace Museum", "Authentic Rajasthani Banquet"],
+  },
+  {
+    id: "delhi-capital",
+    title: "Delhi Imperial Capitals & Spice Markets",
+    destination: "Delhi NCR",
+    duration: "3 Days / 2 Nights",
+    originalPrice: "₹16,500",
+    price: "₹12,999",
+    discountBadge: "15% OFF",
+    rating: 5,
+    reviews: 98,
+    image:
+      "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=800&q=80",
+    highlights: ["Red Fort (Lal Qila)", "Qutub Minar Complex", "Chandni Chowk Food Walk", "India Gate Walk"],
+  },
+  {
+    id: "agra-taj",
+    title: "Agra Sunrise Taj Mahal & Mughal Citadel",
+    destination: "Agra",
+    duration: "2 Days / 1 Night",
+    originalPrice: "₹21,000",
+    price: "₹16,999",
+    discountBadge: "18% OFF",
+    rating: 5,
+    reviews: 180,
+    image:
+      "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80",
+    highlights: ["Taj Mahal Sunrise Entry", "Agra Fort Sandstone Palace", "Mehtab Bagh Sunset", "Marble Inlay Workshop"],
+  },
+  {
+    id: "rajdhani-transit",
+    title: "Kollam to North India Rajdhani Rail Express",
+    destination: "Indian Railways",
+    duration: "2 Days / 2 Nights",
+    originalPrice: "₹18,000",
+    price: "₹14,999",
+    discountBadge: "16% OFF",
+    rating: 5,
+    reviews: 76,
+    image:
+      "https://images.unsplash.com/photo-1541427468627-a89a96e5ca1d?auto=format&fit=crop&w=800&q=80",
+    highlights: ["Overnight 3-Tier/2-Tier AC Sleeper", "Meals Onboard", "Western Ghats Views", "Group Reserved Berths"],
+  },
+  {
+    id: "fatehpur-sikri",
+    title: "Fatehpur Sikri Imperial Ghost Citadel",
+    destination: "Agra Suburbs",
+    duration: "Day Excursion",
+    originalPrice: "₹32,000",
+    price: "₹24,999",
+    discountBadge: "22% OFF",
+    rating: 5,
+    reviews: 110,
+    image:
+      "https://images.unsplash.com/photo-1603288967399-28153c3065b2?auto=format&fit=crop&w=800&q=80",
+    highlights: ["Buland Darwaza Giant Gate", "Panch Mahal", "Salim Chishti Tomb", "Guided Architectural Walk"],
+  },
+  {
+    id: "complete-circuit",
+    title: "All-Inclusive Royal Route Winter Circuit",
+    destination: "Rajasthan · Delhi · Agra",
+    duration: "10 Days / 9 Nights",
+    originalPrice: "₹36,000",
+    price: "₹28,999",
+    discountBadge: "20% OFF",
+    rating: 5,
+    reviews: 215,
+    image:
+      "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=800&q=80",
+    highlights: ["Full Golden Triangle Circuit", "All Heritage Stays", "Express Coach & Transfers", "All Entry Permits Included"],
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Priya Sharma",
+    role: "Trip Participant · Kollam",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+    text: "Amazing experience with Royal Routes! The coordination between Kollam departure and the Rajasthan hotels was completely seamless. Everything was perfectly organized!",
+  },
+  {
+    name: "Rohit Verma",
+    role: "Group Member · Ernakulam",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+    text: "The best winter vacation we ever had. Having the itinerary, hotel check-ins, and train PNRs all updated live by the destination admins made travel stress-free.",
+  },
+  {
+    name: "Anjali Mehta",
+    role: "Destination Coordinator",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    text: "Highly recommended! As a coordinator, the approval workflow and drag-and-drop itinerary builder allowed our team to draft our Delhi day schedules in minutes.",
+  },
+  {
+    name: "Karan Singh",
+    role: "Trip Member · Trivandrum",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
+    text: "Excellent support throughout the entire planning phase. Having the interactive route map and transparent per-person budget estimates kept our group aligned.",
   },
 ];
 
 export default function LandingPage() {
   const [daysLeft, setDaysLeft] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [activeTab, setActiveTab] = useState<"places" | "routemap" | "packages" | "transfers">("places");
+  const [searchLocation, setSearchLocation] = useState("Rajasthan, Delhi, Agra");
+  const [travelers, setTravelers] = useState("Group Trip (12+ Pax)");
 
   useEffect(() => {
     setDaysLeft(daysUntil(DEPARTURE_DATE));
-    const onScroll = () => setIsScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <div className="min-h-screen bg-ivory-50">
-      {/* ── Navbar ─────────────────────────────────────────────────────── */}
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? "bg-white/95 backdrop-blur-sm border-b border-ivory-200 shadow-sm"
-            : "bg-transparent"
-        }`}
-      >
-        <div className="section-container flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🏛️</span>
-            <span
-              className={`font-display font-bold text-lg transition-colors ${
-                isScrolled ? "text-royal-900" : "text-white"
-              }`}
-            >
-              Royal Routes
-            </span>
-          </div>
+    <div className="min-h-screen bg-ivory-50 flex flex-col font-body text-stone-900 selection:bg-gold-500 selection:text-white">
+      {/* ── Top Floating Header (Ref: Shanti Travels Style) ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-royal-950/85 backdrop-blur-md border-b border-white/10 text-white transition-all">
+        <div className="section-container flex items-center justify-between h-20">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-2xl bg-gold-gradient flex items-center justify-center text-white shadow-gold font-display font-black text-xl">
+              R
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-display font-black text-xl sm:text-2xl tracking-tight text-white group-hover:text-gold-300 transition-colors">
+                  Royal Routes
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
+              </div>
+              <p className="text-[10px] uppercase tracking-widest text-gold-300 font-semibold leading-none">
+                India Trip Planner
+              </p>
+            </div>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-white/80">
+            <Link href="/" className="text-gold-400 hover:text-gold-300 transition-colors">
+              Home
+            </Link>
+            <Link href="#destinations" className="hover:text-white transition-colors">
+              Destinations
+            </Link>
+            <Link href="#routemap" className="hover:text-white transition-colors">
+              Route Map
+            </Link>
+            <Link href="#packages" className="hover:text-white transition-colors">
+              Packages &amp; Stages
+            </Link>
+            <Link href="/itinerary" className="hover:text-white transition-colors">
+              Master Itinerary
+            </Link>
+            <Link href="/travel-info" className="hover:text-white transition-colors">
+              Travel Logistics
+            </Link>
+          </nav>
+
+          {/* Right Header Controls */}
           <div className="flex items-center gap-3">
+            {/* Phone Hotline Pill */}
+            <a
+              href="tel:+919876543210"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/15 backdrop-blur-sm transition-all shadow-sm"
+            >
+              <Phone className="w-3.5 h-3.5 text-gold-400" />
+              <span>+91 98765 43210</span>
+            </a>
+
+            {/* Portal Action */}
             <Link
               href="/dashboard"
-              className={`text-sm font-medium transition-colors ${
-                isScrolled ? "text-stone-600 hover:text-royal-700" : "text-white/80 hover:text-white"
-              }`}
+              className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gold-500 hover:bg-gold-600 text-royal-950 font-bold text-xs sm:text-sm transition-all shadow-gold hover:scale-105 flex items-center gap-1.5"
             >
-              Member View
+              <span>Member Portal</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+
             <Link
               href="/login"
-              className="px-4 py-2 bg-gold-500 hover:bg-gold-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-gold"
+              className="p-2 sm:px-3 sm:py-2 rounded-full border border-white/20 hover:border-white text-xs font-medium text-white/90 hover:text-white transition-colors"
+              title="Admin Login"
             >
-              Admin Login
+              Admin
             </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center bg-royal-gradient overflow-hidden">
-        {/* Decorative pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
+      {/* ── Hero Section (Ref: Shanti Travels Style) ── */}
+      <section className="relative min-h-[92vh] sm:min-h-[90vh] flex flex-col justify-center pt-28 pb-32 sm:pb-36 bg-royal-950 text-white overflow-hidden">
+        {/* Background Landscape Photo */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=2200&q=85"
+            alt="Royal India Taj Mahal Heritage"
+            fill
+            priority
+            className="object-cover object-center opacity-40 scale-105 transition-transform duration-1000"
+          />
+          {/* Gradients to blend */}
+          <div className="absolute inset-0 bg-gradient-to-t from-royal-950 via-royal-950/60 to-royal-950/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-royal-950/90 via-transparent to-royal-950/80" />
+        </div>
 
-        <div className="section-container relative z-10 py-32 flex flex-col items-center text-center">
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-gold-300 text-sm font-medium mb-8">
-            <Star className="w-3.5 h-3.5 fill-gold-300" />
-            Winter 2026 Group Journey
-            <Star className="w-3.5 h-3.5 fill-gold-300" />
+        {/* Hero Content */}
+        <div className="section-container relative z-10 space-y-6 max-w-4xl pt-6">
+          {/* Eyebrow Pill */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/20 text-gold-300 border border-gold-400/30 backdrop-blur-md text-xs font-bold uppercase tracking-widest">
+            <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+            <span>Winter 2026-27 Grand Group Tour · 24 Dec Departure</span>
           </div>
 
-          {/* Title */}
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl text-white mb-6 leading-tight">
+          {/* Big Hero Title with Script Accent */}
+          <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-white">
+            Find our dream <br />
+            <span className="font-serif italic text-gold-400 font-normal">Royal Route</span> on
             Royal Routes
-            <br />
-            <span className="text-gold-400">India Trip Planner</span>
           </h1>
 
-          <p className="text-white/70 text-lg sm:text-xl max-w-2xl mb-10 font-body leading-relaxed">
-            An extraordinary journey through Rajasthan, Delhi &amp; Agra — departing from{" "}
-            <span className="text-gold-300 font-semibold">Kollam Junction</span> on{" "}
-            <span className="text-gold-300 font-semibold">24 December 2026</span>.
+          <p className="text-white/80 text-base sm:text-xl font-normal max-w-2xl leading-relaxed">
+            Let&apos;s make your winter journey through Rajasthan, Delhi, and Agra an extraordinary,
+            seamlessly coordinated adventure. Departing from{" "}
+            <span className="text-gold-300 font-semibold">Kollam Junction, Kerala</span> on{" "}
+            <span className="text-gold-300 font-semibold">24 December 2026</span> via Rajdhani Express.
           </p>
 
-          {/* Countdown */}
-          <div className="flex items-center gap-6 mb-12">
-            <div className="text-center">
-              <p className="text-4xl font-display font-bold text-white">{daysLeft}</p>
-              <p className="text-white/60 text-xs uppercase tracking-widest mt-1">Days Away</p>
-            </div>
-            <div className="w-px h-12 bg-white/20" />
-            <div className="flex items-center gap-2 text-white/80">
-              <Calendar className="w-5 h-5 text-gold-400" />
-              <span className="text-sm">24 Dec 2026</span>
-            </div>
-            <div className="w-px h-12 bg-white/20" />
-            <div className="flex items-center gap-2 text-white/80">
-              <MapPin className="w-5 h-5 text-gold-400" />
-              <span className="text-sm">3 Destinations</span>
-            </div>
-          </div>
-
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-4 pt-2">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gold-500 hover:bg-gold-600 text-white font-semibold rounded-2xl text-base transition-all shadow-gold hover:shadow-lg hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gold-gradient text-royal-950 font-bold text-sm sm:text-base shadow-gold hover:opacity-95 hover:scale-105 transition-all"
             >
-              Explore the Trip
+              <span>Explore Itinerary Now</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold rounded-2xl text-base transition-all backdrop-blur-sm"
+
+            <a
+              href="#routemap"
+              className="inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-sm sm:text-base border border-white/25 backdrop-blur-md transition-all"
             >
-              Admin Login
-            </Link>
+              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                <Play className="w-3 h-3 text-gold-400 fill-gold-400" />
+              </div>
+              <span>View Route Circuit</span>
+            </a>
           </div>
 
-          {/* Scroll hint */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-white/40">
-            <ChevronDown className="w-6 h-6" />
+          {/* Countdown Chips */}
+          <div className="pt-4 flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-white/90">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gold-400" />
+              <span>
+                <strong className="text-gold-300 font-bold">{daysLeft} Days</strong> Until Departure
+              </span>
+            </div>
+            <div className="w-px h-4 bg-white/20 hidden sm:block" />
+            <div className="flex items-center gap-2">
+              <Train className="w-4 h-4 text-gold-400" />
+              <span>Kollam Jcn ➔ Rajasthan ➔ Delhi ➔ Agra</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Floating Search & Filter Bar (Ref: Shanti Travels Floating Widget) ── */}
+        <div className="section-container relative z-20 -mb-48 sm:-mb-52 mt-12 sm:mt-16">
+          <div className="bg-white rounded-3xl p-3 sm:p-5 shadow-premium-lg border border-ivory-200">
+            {/* Top Switcher Tabs */}
+            <div className="flex items-center gap-2 sm:gap-4 border-b border-ivory-100 pb-3 mb-4 overflow-x-auto text-xs sm:text-sm font-semibold text-stone-500">
+              <button
+                onClick={() => setActiveTab("places")}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl transition-all",
+                  activeTab === "places"
+                    ? "bg-royal-50 text-royal-700 font-bold border border-royal-200"
+                    : "hover:text-stone-900"
+                )}
+              >
+                <MapPin className="w-4 h-4 text-royal-600" />
+                <span>Destinations</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("routemap")}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl transition-all",
+                  activeTab === "routemap"
+                    ? "bg-royal-50 text-royal-700 font-bold border border-royal-200"
+                    : "hover:text-stone-900"
+                )}
+              >
+                <Compass className="w-4 h-4 text-royal-600" />
+                <span>Interactive Route Map</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("packages")}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl transition-all",
+                  activeTab === "packages"
+                    ? "bg-royal-50 text-royal-700 font-bold border border-royal-200"
+                    : "hover:text-stone-900"
+                )}
+              >
+                <Sparkles className="w-4 h-4 text-royal-600" />
+                <span>Tour Stages</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("transfers")}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-xl transition-all",
+                  activeTab === "transfers"
+                    ? "bg-royal-50 text-royal-700 font-bold border border-royal-200"
+                    : "hover:text-stone-900"
+                )}
+              >
+                <Train className="w-4 h-4 text-royal-600" />
+                <span>Train &amp; Transfers</span>
+              </button>
+            </div>
+
+            {/* Segmented Inputs Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+              {/* Where are you going? */}
+              <div className="lg:col-span-4 p-3 rounded-2xl bg-ivory-50 border border-ivory-200 flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-gold-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-1">
+                    Circuit Focus
+                  </label>
+                  <input
+                    type="text"
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    className="w-full text-xs sm:text-sm font-bold text-stone-900 bg-transparent focus:outline-none truncate"
+                  />
+                </div>
+              </div>
+
+              {/* Check In / Departure Date */}
+              <div className="lg:col-span-3 p-3 rounded-2xl bg-ivory-50 border border-ivory-200 flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-royal-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-1">
+                    Planned Departure
+                  </label>
+                  <p className="text-xs sm:text-sm font-bold text-stone-900 truncate">
+                    24 Dec 2026 (Night)
+                  </p>
+                </div>
+              </div>
+
+              {/* Train / Transport Service */}
+              <div className="lg:col-span-3 p-3 rounded-2xl bg-ivory-50 border border-ivory-200 flex items-center gap-3">
+                <Train className="w-5 h-5 text-royal-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-1">
+                    Transit Mode
+                  </label>
+                  <p className="text-xs sm:text-sm font-bold text-stone-900 truncate">
+                    Rajdhani Express (TBC)
+                  </p>
+                </div>
+              </div>
+
+              {/* Search Action Button */}
+              <div className="lg:col-span-2">
+                <Link
+                  href="/itinerary"
+                  className="w-full py-4 rounded-2xl bg-royal-gradient text-white font-bold text-sm flex items-center justify-center gap-2 shadow-premium hover:opacity-95 transition-all text-center"
+                >
+                  <Search className="w-4 h-4 text-gold-300" />
+                  <span>Explore</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Destinations ───────────────────────────────────────────────── */}
-      <section className="py-24 bg-white">
-        <div className="section-container">
-          <div className="text-center mb-16">
-            <p className="text-gold-600 text-sm font-semibold uppercase tracking-widest mb-3">
-              Three Iconic Destinations
-            </p>
-            <h2 className="font-display text-display-md text-royal-950 mb-4">
-              The Golden Triangle &amp; Beyond
-            </h2>
-            <p className="text-stone-500 max-w-xl mx-auto">
-              From Rajasthan&apos;s royal heritage to the eternal Taj Mahal — every stop a masterpiece.
-            </p>
+      {/* Spacer for floating search widget overlap */}
+      <div className="h-28 sm:h-32" />
+
+      {/* ── Popular Destinations Section (Ref: Shanti Travels 5-Card Layout) ── */}
+      <section id="destinations" className="py-16 sm:py-20 bg-ivory-50">
+        <div className="section-container space-y-8">
+          {/* Section Header with Wave */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-ivory-200 pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-royal-950">
+                  Popular Destinations
+                </h2>
+                <span className="text-gold-500 text-lg font-mono">~~~~</span>
+              </div>
+              <p className="text-stone-500 text-xs sm:text-sm">
+                Explore the key royal capitals, forts, and departure hubs on our 2026-27 circuit.
+              </p>
+            </div>
+            <Link
+              href="/itinerary"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-royal-700 hover:text-royal-950 group"
+            >
+              <span>View all destinations</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {DESTINATIONS.map((dest, i) => (
-              <div
+          {/* 5 Destination Cards Carousel/Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+            {POPULAR_DESTINATIONS.map((dest, i) => (
+              <Link
                 key={dest.name}
-                className="group card-premium overflow-hidden hover:shadow-premium-lg transition-all duration-300 hover:-translate-y-1"
+                href={
+                  dest.name.toLowerCase().includes("rajasthan")
+                    ? "/destinations/rajasthan"
+                    : dest.name.toLowerCase().includes("delhi")
+                    ? "/destinations/delhi"
+                    : dest.name.toLowerCase().includes("agra")
+                    ? "/destinations/agra"
+                    : "/travel-info"
+                }
+                className="group relative h-72 sm:h-80 rounded-3xl overflow-hidden shadow-card hover:shadow-premium-lg transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-end p-4 text-white"
               >
-                {/* Card header */}
-                <div className={`bg-gradient-to-br ${dest.color} p-8 text-white`}>
-                  <div className="text-4xl mb-3">{dest.emoji}</div>
-                  <p className="text-white/70 text-xs uppercase tracking-widest mb-1">
-                    Destination {i + 1}
-                  </p>
-                  <h3 className="font-display text-2xl font-bold">{dest.name}</h3>
-                  <p className="text-white/80 text-sm mt-1 italic">{dest.tagline}</p>
-                </div>
+                {/* Background Image */}
+                <Image
+                  src={dest.image}
+                  alt={dest.name}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 20vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700"
+                />
 
-                {/* Card body */}
-                <div className="p-6">
-                  <p className="text-stone-600 text-sm leading-relaxed mb-4">{dest.desc}</p>
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
-                      Highlights
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {dest.highlights.map((h) => (
-                        <span
-                          key={h}
-                          className="px-2.5 py-1 bg-ivory-100 text-stone-600 text-xs rounded-full border border-ivory-200"
-                        >
-                          {h}
-                        </span>
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-royal-950 via-royal-950/40 to-transparent" />
+
+                {/* Content */}
+                <div className="relative z-10 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] text-gold-300 font-semibold">
+                    <span className="bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                      {dest.days}
+                    </span>
+                    <span className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full text-white">
+                      <Star className="w-3 h-3 text-gold-400 fill-gold-400" />
+                      {dest.rating}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-base sm:text-lg font-bold leading-tight group-hover:text-gold-300 transition-colors">
+                    {dest.name}
+                  </h3>
+                  <p className="text-[11px] text-white/80 line-clamp-1 italic">{dest.tagline}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Interactive Route Map Section (Visual Schematic Circuit) ── */}
+      <section id="routemap" className="py-12 sm:py-16 bg-white border-y border-ivory-200">
+        <div className="section-container space-y-6">
+          <VisualRouteMap />
+        </div>
+      </section>
+
+      {/* ── Popular Tour Packages / Circuit Stages (Ref: Shanti Travels 6-Card Grid) ── */}
+      <section id="packages" className="py-16 sm:py-20 bg-ivory-50">
+        <div className="section-container space-y-8">
+          {/* Header with decorative wave */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-ivory-200 pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-royal-950">
+                  Popular Tour Packages &amp; Stages
+                </h2>
+                <span className="text-gold-500 text-lg font-mono">~~~~</span>
+              </div>
+              <p className="text-stone-500 text-xs sm:text-sm">
+                Curated group itineraries designed by our destination administrators.
+              </p>
+            </div>
+            <Link
+              href="/itinerary"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-royal-700 hover:text-royal-950 group"
+            >
+              <span>View all packages</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          {/* 6 Tour Packages 3x2 Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {TOUR_PACKAGES.map((pkg) => (
+              <div
+                key={pkg.id}
+                className="card-premium overflow-hidden hover:shadow-premium-lg transition-all duration-300 hover:-translate-y-1.5 group flex flex-col justify-between"
+              >
+                <div>
+                  {/* Photo with Discount Pill */}
+                  <div className="relative h-52 sm:h-56 w-full overflow-hidden">
+                    <Image
+                      src={pkg.image}
+                      alt={pkg.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+
+                    {/* Red Discount Tag */}
+                    <span className="absolute top-4 right-4 bg-terracotta-600 text-white text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+                      {pkg.discountBadge}
+                    </span>
+
+                    {/* Location Badge */}
+                    <span className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-gold-400" />
+                      {pkg.destination}
+                    </span>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center justify-between text-xs text-stone-500">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-royal-600" />
+                        {pkg.duration}
+                      </span>
+                      <span className="flex items-center gap-1 font-bold text-stone-700">
+                        <Star className="w-3.5 h-3.5 text-gold-500 fill-gold-500" />
+                        5.0 ({pkg.reviews})
+                      </span>
+                    </div>
+
+                    <h3 className="font-display text-xl font-bold text-royal-950 group-hover:text-royal-700 transition-colors leading-snug">
+                      {pkg.title}
+                    </h3>
+
+                    {/* Highlights bullet chips */}
+                    <div className="space-y-1.5 text-xs text-stone-600 pt-1">
+                      {pkg.highlights.slice(0, 2).map((h, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="truncate">{h}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── Trip Overview ───────────────────────────────────────────────── */}
-      <section className="py-24 bg-ivory-50">
-        <div className="section-container">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className="text-gold-600 text-sm font-semibold uppercase tracking-widest mb-3">
-                Trip Overview
-              </p>
-              <h2 className="font-display text-display-sm text-royal-950 mb-6">
-                A Winter Journey Through North India
-              </h2>
-              <p className="text-stone-600 leading-relaxed mb-8">
-                Departing from Kollam Junction, Kerala on the night of 24 December 2026 via Rajdhani
-                Express, our group will traverse three of India&apos;s most iconic destinations —
-                Rajasthan, Delhi, and Agra — before returning home in early 2027.
-              </p>
-
-              <div className="space-y-4">
-                {[
-                  { icon: "🚂", label: "Departure", value: "Kollam Junction, 24 Dec 2026 (Night)" },
-                  { icon: "🚄", label: "Train", value: "Rajdhani Express (details TBC)" },
-                  { icon: "📍", label: "Destinations", value: "Rajasthan → Delhi → Agra" },
-                  { icon: "📅", label: "Return", value: "To be confirmed" },
-                  { icon: "👥", label: "Trip Type", value: "Group journey with multiple admins" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-start gap-4">
-                    <span className="text-2xl w-8 shrink-0">{item.icon}</span>
-                    <div>
-                      <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
-                        {item.label}
-                      </p>
-                      <p className="text-stone-700 font-medium">{item.value}</p>
+                {/* Footer Price & CTA */}
+                <div className="p-6 pt-0 border-t border-ivory-100 flex items-center justify-between mt-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-stone-400 block">
+                      Estimated Cost
+                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display text-2xl font-black text-royal-950">
+                        {pkg.price}
+                      </span>
+                      <span className="text-xs text-stone-400 line-through">
+                        {pkg.originalPrice}
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Stats panel */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: "Destinations", value: "3", sub: "Rajasthan, Delhi, Agra" },
-                { label: "Days Away", value: String(daysLeft), sub: "from today" },
-                { label: "Departure", value: "24 Dec", sub: "2026, Night" },
-                { label: "Itinerary", value: "Live", sub: "updates from admins" },
-              ].map((stat) => (
-                <div key={stat.label} className="card-premium p-6 text-center">
-                  <p className="font-display text-3xl font-bold text-royal-800 mb-1">{stat.value}</p>
-                  <p className="text-stone-500 text-xs uppercase tracking-wide">{stat.label}</p>
-                  <p className="text-stone-400 text-xs mt-1">{stat.sub}</p>
+                  <Link
+                    href="/itinerary"
+                    className="px-4 py-2 rounded-xl bg-royal-gradient text-white text-xs font-bold hover:opacity-95 shadow-premium flex items-center gap-1 transition-all"
+                  >
+                    <span>View Day Plan</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Role Cards ──────────────────────────────────────────────────── */}
-      <section className="py-24 bg-royal-950 text-white">
-        <div className="section-container">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-display-md text-white mb-4">
-              Built for the Whole Team
-            </h2>
-            <p className="text-white/60 max-w-lg mx-auto">
-              Three distinct roles keep every member informed and every admin focused on their work.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Users className="w-7 h-7" />,
-                role: "Master Admin",
-                desc: "Full control — create trips, assign admins, approve itineraries, publish content.",
-                color: "bg-gold-500/10 border-gold-400/30 text-gold-300",
-              },
-              {
-                icon: <MapPin className="w-7 h-7" />,
-                role: "Destination Admin",
-                desc: "Build day-wise itineraries for assigned destinations and submit for review.",
-                color: "bg-royal-500/10 border-royal-400/30 text-royal-300",
-              },
-              {
-                icon: <Star className="w-7 h-7" />,
-                role: "Trip Member",
-                desc: "View the final itinerary, hotels, schedules, and all trip announcements.",
-                color: "bg-terracotta-500/10 border-terracotta-400/30 text-terracotta-300",
-              },
-            ].map((r) => (
-              <div
-                key={r.role}
-                className={`p-8 rounded-2xl border ${r.color} flex flex-col gap-4`}
-              >
-                <div className="opacity-80">{r.icon}</div>
-                <h3 className="font-display text-xl font-bold text-white">{r.role}</h3>
-                <p className="text-white/60 text-sm leading-relaxed">{r.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <footer className="bg-white border-t border-ivory-200 py-10">
-        <div className="section-container flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🏛️</span>
-            <span className="font-display font-bold text-royal-900">Royal Routes</span>
+      {/* ── "Need Assistance? Trip Organizers" Banner (Ref: Shanti Travels Assistance Strip) ── */}
+      <section className="section-container my-12">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-royal-950 via-royal-900 to-[#0e3b43] text-white p-8 sm:p-12 shadow-premium-lg">
+          {/* Subtle background decoration */}
+          <div
+            className="absolute inset-0 opacity-15 pointer-events-none"
+            style={{
+              backgroundImage: `radial-gradient(circle at 10px 10px, #ffffff 1.5px, transparent 0)`,
+              backgroundSize: "24px 24px",
+            }}
+          />
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="space-y-4 max-w-xl">
+              <span className="text-xs uppercase tracking-widest text-gold-300 font-bold bg-white/10 px-3 py-1 rounded-full border border-white/10">
+                We&apos;re Here to Help
+              </span>
+              <h2 className="font-display text-3xl sm:text-4xl font-bold">
+                Need Assistance With Your Trip?
+              </h2>
+              <p className="text-white/80 text-sm leading-relaxed">
+                Our trip organizers and destination admins are available to verify train tickets,
+                arrange group room allocations, and resolve custom travel requirements.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  href="/travel-info"
+                  className="px-6 py-3 rounded-xl bg-white text-royal-950 text-xs sm:text-sm font-bold hover:bg-gold-300 transition-colors shadow-sm"
+                >
+                  Contact Organizers
+                </Link>
+                <a
+                  href="tel:+919876543210"
+                  className="px-6 py-3 rounded-xl bg-white/15 hover:bg-white/20 text-white text-xs sm:text-sm font-bold border border-white/20 backdrop-blur-sm transition-colors flex items-center gap-2"
+                >
+                  <Phone className="w-4 h-4 text-gold-400" />
+                  <span>+91 98765 43210</span>
+                </a>
+              </div>
+            </div>
+
+            {/* 3 Trust Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 border-t lg:border-t-0 lg:border-l border-white/15 pt-6 lg:pt-0 lg:pl-8">
+              <div className="space-y-1">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-gold-400 mb-2">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-sm">Best Group Rates</h4>
+                <p className="text-xs text-white/60">We negotiate bulk tariffs for stays &amp; coaches.</p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-gold-400 mb-2">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-sm">24/7 Group Support</h4>
+                <p className="text-xs text-white/60">Active admin coordination on all travel days.</p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-gold-400 mb-2">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-sm">Verified Bookings</h4>
+                <p className="text-xs text-white/60">Strict anti-fake reservation protocols.</p>
+              </div>
+            </div>
           </div>
-          <p className="text-stone-400 text-sm">
-            Rajasthan · Delhi · Agra — Winter 2026–27 Group Trip
-          </p>
-          <Link href="/login" className="text-sm text-royal-600 hover:text-royal-800 font-medium">
-            Admin Login →
-          </Link>
+        </div>
+      </section>
+
+      {/* ── Testimonials Section (Ref: Shanti Travels Traveler Reviews) ── */}
+      <section className="py-16 bg-white border-b border-ivory-200">
+        <div className="section-container space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-ivory-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-royal-950">
+                  What Our Travelers Say
+                </h2>
+                <span className="text-gold-500 text-lg font-mono">~~~~</span>
+              </div>
+              <p className="text-stone-500 text-xs sm:text-sm">
+                Feedback from members and coordinators who have experienced our organized group tours.
+              </p>
+            </div>
+            <span className="text-xs text-stone-400 font-semibold hidden sm:block">
+              Verified Member Reviews
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {TESTIMONIALS.map((t, idx) => (
+              <div
+                key={idx}
+                className="bg-ivory-50 border border-ivory-200 rounded-3xl p-6 flex flex-col justify-between space-y-4 shadow-card hover:border-royal-200 transition-colors"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-gold-500 fill-gold-500" />
+                    ))}
+                  </div>
+                  <p className="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                    &ldquo;{t.text}&rdquo;
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 pt-3 border-t border-ivory-200">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gold-300 shrink-0">
+                    <Image src={t.avatar} alt={t.name} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-sm text-royal-950">{t.name}</h4>
+                    <p className="text-[10px] text-stone-500">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4 Feature / Guarantee Badges (Ref: Shanti Travels 4-Icon Strip) ── */}
+      <section className="py-12 bg-ivory-100/60 border-b border-ivory-200">
+        <div className="section-container">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-royal-100 flex items-center justify-center text-royal-700 shrink-0">
+                <MapPin className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-stone-900">100+ Heritage Stops</h4>
+                <p className="text-xs text-stone-500">Across Rajasthan, Delhi &amp; Agra</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-gold-100 flex items-center justify-center text-gold-700 shrink-0">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-stone-900">Transparent Budget</h4>
+                <p className="text-xs text-stone-500">Per-person share with no hidden costs</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-stone-900">Multi-Admin Team</h4>
+                <p className="text-xs text-stone-500">Live verified updates by local admins</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                <Train className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-stone-900">Official Railway Transit</h4>
+                <p className="text-xs text-stone-500">Rajdhani Express reservation tracking</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Newsletter / Updates Strip (Ref: Shanti Travels Green Strip) ── */}
+      <section className="section-container my-12">
+        <div className="rounded-3xl bg-[#0c4038] text-white p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-premium">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-gold-400 shrink-0">
+              <Mail className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-display text-xl font-bold">Subscribe to Trip Bulletins</h3>
+              <p className="text-xs text-white/80 mt-0.5">
+                Receive instant notices when hotel bookings and Rajdhani ticket berths are confirmed.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 max-w-md w-full">
+            <input
+              type="email"
+              placeholder="Enter your email address"
+              className="px-4 py-3 rounded-2xl bg-white text-stone-900 text-xs sm:text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-gold-400"
+            />
+            <button className="px-5 py-3 rounded-2xl bg-gold-500 hover:bg-gold-600 text-royal-950 font-bold text-xs sm:text-sm transition-colors shrink-0">
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Modern Luxury Dark Navy Footer (Ref: Shanti Travels Bottom) ── */}
+      <footer className="bg-royal-950 text-white pt-16 pb-12 mt-auto border-t border-white/10">
+        <div className="section-container space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 text-xs">
+            {/* Col 1: Brand Info */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gold-gradient flex items-center justify-center text-white font-display font-black text-base shadow-gold">
+                  R
+                </div>
+                <span className="font-display font-bold text-xl text-white">Royal Routes</span>
+              </div>
+              <p className="text-white/70 leading-relaxed max-w-sm">
+                Royal Routes is your premium collaborative group trip planner for the Rajasthan, Delhi,
+                and Agra winter tour departing 24 December 2026 from Kollam Junction, Kerala.
+              </p>
+              <div className="flex items-center gap-3 text-gold-400 font-semibold pt-1">
+                <span>Winter 2026-27 Edition</span>
+                <span>•</span>
+                <span>Rajdhani Express Rail</span>
+              </div>
+            </div>
+
+            {/* Col 2: Quick Links */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-sm text-gold-400 uppercase tracking-wider">Quick Links</h4>
+              <ul className="space-y-2 text-white/75">
+                <li><Link href="/" className="hover:text-white">Home Portal</Link></li>
+                <li><Link href="/dashboard" className="hover:text-white">Member Dashboard</Link></li>
+                <li><Link href="/itinerary" className="hover:text-white">Master Itinerary</Link></li>
+                <li><Link href="/travel-info" className="hover:text-white">Travel Information</Link></li>
+                <li><Link href="/login" className="hover:text-white">Administrator Login</Link></li>
+              </ul>
+            </div>
+
+            {/* Col 3: Destinations */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-sm text-gold-400 uppercase tracking-wider">Destinations</h4>
+              <ul className="space-y-2 text-white/75">
+                <li><Link href="/destinations/rajasthan" className="hover:text-white">Jaipur &amp; Rajasthan Forts</Link></li>
+                <li><Link href="/destinations/delhi" className="hover:text-white">Delhi Red Fort &amp; Qutub</Link></li>
+                <li><Link href="/destinations/agra" className="hover:text-white">Agra &amp; Taj Mahal Sunrise</Link></li>
+                <li><Link href="/travel-info" className="hover:text-white">Kollam Junction Hub</Link></li>
+              </ul>
+            </div>
+
+            {/* Col 4: Emergency Contacts */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-sm text-gold-400 uppercase tracking-wider">Contact &amp; Helplines</h4>
+              <ul className="space-y-2 text-white/75">
+                <li className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-gold-400 shrink-0" />
+                  <span>+91 98765 43210 (Organizer)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Train className="w-3.5 h-3.5 text-gold-400 shrink-0" />
+                  <span>139 (Railway Enquiry)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-gold-400 shrink-0" />
+                  <span>112 (National Emergency)</span>
+                </li>
+                <li className="text-[11px] text-white/50 pt-2">
+                  Departing: Kollam Junction Railway Station, Kerala 691001
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom copyright */}
+          <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-white/50">
+            <p>&copy; 2026-2027 Royal Routes · India Trip Planner. All Rights Reserved.</p>
+            <div className="flex items-center gap-4">
+              <span className="hover:text-white">Privacy Policy</span>
+              <span>•</span>
+              <span className="hover:text-white">Terms of Travel</span>
+              <span>•</span>
+              <span className="hover:text-white">Railway Booking Notice</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
