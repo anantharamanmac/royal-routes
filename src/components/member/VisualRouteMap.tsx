@@ -137,14 +137,17 @@ export const ROUTE_STOPS: RouteStop[] = [
 function WavySquiggle() {
   return (
     <svg
-      className="w-8 h-3 text-[#007d8a] inline-block ml-2 align-middle"
+      width="32"
+      height="12"
+      style={{ width: "32px", height: "12px", minWidth: "32px" }}
+      className="w-8 h-3 text-[#007d8a] inline-block ml-2 align-middle shrink-0"
       viewBox="0 0 36 10"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
         d="M1 5C3.5 2 6 2 8.5 5C11 8 13.5 8 16 5C18.5 2 21 2 23.5 5C26 8 28.5 8 31 5C33.5 2 35 3 35 5"
-        stroke="currentColor"
+        stroke="#007d8a"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
