@@ -43,3 +43,4 @@ export async function updateApprovalRequest(
     reviewedAt: serverTimestamp(),
   });
 }
+

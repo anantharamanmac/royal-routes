@@ -5,6 +5,50 @@
   --foreground: #1c1917;
   --border: #e8dfd0;
   --radius: 0.75rem;
+
+  /* Royal palette */
+  --royal-50: #f0f4ff;
+  --royal-100: #dde6ff;
+  --royal-200: #c3d1ff;
+  --royal-300: #9db2ff;
+  --royal-400: #7089fc;
+  --royal-500: #4d64f8;
+  --royal-600: #2940ed;
+  --royal-700: #1e2fd6;
+  --royal-800: #1c28ad;
+  --royal-900: #1e2888;
+  --royal-950: #141a5c;
+
+  /* Ivory palette */
+  --ivory-50: #faf8f4;
+  --ivory-100: #f4f0e8;
+  --ivory-200: #e8dfd0;
+  --ivory-300: #d8c9b0;
+  --ivory-400: #c5ae8c;
+  --ivory-500: #b0946e;
+
+  /* Gold palette */
+  --gold-50: #fffbeb;
+  --gold-100: #fef3c7;
+  --gold-200: #fde68a;
+  --gold-300: #fcd34d;
+  --gold-400: #fbbf24;
+  --gold-500: #f59e0b;
+  --gold-600: #d97706;
+  --gold-700: #b45309;
+
+  /* Terracotta */
+  --terracotta-50: #fdf4f1;
+  --terracotta-100: #fbe6df;
+  --terracotta-200: #f7cfc4;
+  --terracotta-600: #c83e27;
+  --terracotta-700: #a7321d;
+
+  /* Sandstone */
+  --sandstone-50: #faf8f5;
+  --sandstone-100: #f2ede5;
+  --sandstone-200: #e5dbcc;
+  --sandstone-600: #9f7858;
 }
 
 * {
@@ -14,15 +58,15 @@
 body {
   background-color: #faf8f4;
   color: #1c1917;
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4, .font-display {
   font-family: var(--font-playfair), Georgia, serif;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -38,12 +82,83 @@ h1, h2, h3 {
   background: #a8a29e;
 }
 
-/* Premium card */
+/* Gradients */
+.bg-royal-gradient {
+  background: linear-gradient(135deg, #141a5c 0%, #1e2888 50%, #2940ed 100%) !important;
+}
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+.bg-hero-overlay {
+  background: linear-gradient(to bottom, rgba(20, 26, 92, 0.7) 0%, rgba(20, 26, 92, 0.4) 50%, rgba(20, 26, 92, 0.8) 100%) !important;
+}
+
+/* Brand Color Utility Classes */
+.bg-royal-50 { background-color: #f0f4ff; }
+.bg-royal-100 { background-color: #dde6ff; }
+.bg-royal-600 { background-color: #2940ed; }
+.bg-royal-700 { background-color: #1e2fd6; }
+.bg-royal-800 { background-color: #1c28ad; }
+.bg-royal-900 { background-color: #1e2888; }
+.bg-royal-950 { background-color: #141a5c; }
+
+.text-royal-600 { color: #2940ed; }
+.text-royal-700 { color: #1e2fd6; }
+.text-royal-800 { color: #1c28ad; }
+.text-royal-900 { color: #1e2888; }
+.text-royal-950 { color: #141a5c; }
+.border-royal-200 { border-color: #c3d1ff; }
+.border-royal-300 { border-color: #9db2ff; }
+
+.bg-ivory-50 { background-color: #faf8f4; }
+.bg-ivory-100 { background-color: #f4f0e8; }
+.bg-ivory-200 { background-color: #e8dfd0; }
+.border-ivory-100 { border-color: #f4f0e8; }
+.border-ivory-200 { border-color: #e8dfd0; }
+.border-ivory-300 { border-color: #d8c9b0; }
+
+.bg-gold-50 { background-color: #fffbeb; }
+.bg-gold-100 { background-color: #fef3c7; }
+.bg-gold-500 { background-color: #f59e0b; }
+.bg-gold-600 { background-color: #d97706; }
+.text-gold-300 { color: #fcd34d; }
+.text-gold-400 { color: #fbbf24; }
+.text-gold-500 { color: #f59e0b; }
+.text-gold-600 { color: #d97706; }
+.text-gold-700 { color: #b45309; }
+.text-gold-800 { color: #92400e; }
+.border-gold-200 { border-color: #fde68a; }
+.border-gold-300 { border-color: #fcd34d; }
+
+.bg-sandstone-50 { background-color: #faf8f5; }
+.bg-sandstone-100 { background-color: #f2ede5; }
+.border-sandstone-200 { border-color: #e5dbcc; }
+.text-sandstone-600 { color: #9f7858; }
+
+.bg-terracotta-50 { background-color: #fdf4f1; }
+.text-terracotta-600 { color: #c83e27; }
+.text-terracotta-700 { color: #a7321d; }
+
+/* Shadows */
+.shadow-premium {
+  box-shadow: 0 4px 24px -4px rgba(20, 26, 92, 0.12), 0 2px 8px -2px rgba(20, 26, 92, 0.06);
+}
+.shadow-premium-lg {
+  box-shadow: 0 12px 48px -8px rgba(20, 26, 92, 0.18), 0 4px 16px -4px rgba(20, 26, 92, 0.08);
+}
+.shadow-gold {
+  box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.35);
+}
+.shadow-card {
+  box-shadow: 0 1px 4px rgba(20, 26, 92, 0.06), 0 4px 16px rgba(20, 26, 92, 0.03);
+}
+
+/* Premium Card */
 .card-premium {
   background-color: #ffffff;
   border: 1px solid #e8dfd0;
   border-radius: 1rem;
-  box-shadow: 0 1px 4px rgba(20, 26, 92, 0.08), 0 4px 16px rgba(20, 26, 92, 0.04);
+  box-shadow: 0 1px 4px rgba(20, 26, 92, 0.06), 0 4px 16px rgba(20, 26, 92, 0.03);
 }
 
 /* Section container */
@@ -78,7 +193,7 @@ h1, h2, h3 {
   padding-bottom: 0.125rem;
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   border-width: 1px;
 }
 

@@ -302,8 +302,8 @@ function SortableItemRow({ item, onEdit, onDelete, previewMode }: SortableItemRo
       ref={setNodeRef}
       style={style}
       className={cn(
-        "bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 group hover:border-royal-200 hover:shadow-sm transition-all",
-        isDragging && "shadow-lg border-royal-300"
+        "bg-white border border-ivory-200 rounded-2xl p-4 flex items-center gap-3.5 group hover:border-royal-300 hover:shadow-card transition-all",
+        isDragging && "shadow-premium-lg border-royal-400 bg-royal-50/50"
       )}
     >
       {/* Drag handle */}
@@ -311,7 +311,7 @@ function SortableItemRow({ item, onEdit, onDelete, previewMode }: SortableItemRo
         <button
           {...attributes}
           {...listeners}
-          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+          className="text-stone-300 hover:text-stone-600 cursor-grab active:cursor-grabbing touch-none flex-shrink-0 p-1"
           aria-label="Drag to reorder"
         >
           <GripVertical className="w-4 h-4" />
@@ -319,7 +319,7 @@ function SortableItemRow({ item, onEdit, onDelete, previewMode }: SortableItemRo
       )}
 
       {/* Type icon */}
-      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", ITEM_TYPE_COLORS[item.type])}>
+      <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm", ITEM_TYPE_COLORS[item.type])}>
         <TypeIcon className="w-4 h-4" />
       </div>
 
@@ -333,35 +333,35 @@ function SortableItemRow({ item, onEdit, onDelete, previewMode }: SortableItemRo
 
       {/* Title & description */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+        <p className="text-sm font-semibold text-royal-950 truncate">{item.title}</p>
         {item.description && (
-          <p className="text-xs text-gray-500 truncate">{item.description}</p>
+          <p className="text-xs text-stone-500 truncate mt-0.5">{item.description}</p>
         )}
       </div>
 
       {/* Badges */}
       <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
         {item.durationMinutes != null && item.durationMinutes > 0 && (
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full flex items-center gap-1">
-            <Clock className="w-3 h-3" />
+          <span className="text-[11px] bg-ivory-100 text-stone-600 px-2.5 py-0.5 rounded-full border border-ivory-200 flex items-center gap-1">
+            <Clock className="w-3 h-3 text-stone-400" />
             {formatDuration(item.durationMinutes)}
           </span>
         )}
         {item.estimatedCost != null && item.estimatedCost > 0 && (
-          <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
+          <span className="text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full font-semibold">
             {formatCurrency(item.estimatedCost, item.currency ?? "INR")}
           </span>
         )}
         {item.bookingStatus !== "not_required" && (
-          <span className={cn("text-xs px-2 py-0.5 rounded-full", BOOKING_STATUS_COLORS[item.bookingStatus])}>
+          <span className={cn("text-[11px] px-2.5 py-0.5 rounded-full border", BOOKING_STATUS_COLORS[item.bookingStatus])}>
             {BOOKING_STATUS_LABELS[item.bookingStatus]}
           </span>
         )}
         {item.isTentative && (
-          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">TBC</span>
+          <span className="text-[11px] bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold">TBC</span>
         )}
         {item.isOptional && (
-          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Optional</span>
+          <span className="text-[11px] bg-stone-100 text-stone-600 border border-dashed border-stone-300 px-2.5 py-0.5 rounded-full">Optional</span>
         )}
       </div>
 
@@ -1410,7 +1410,7 @@ export default function ItineraryBuilderPage() {
             You do not have permission to access this itinerary builder.
           </p>
           <button
-            onClick={() => router.push("/assignments")}
+            onClick={() => router.push("/admin/assignments")}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-royal-600 text-white rounded-xl text-sm font-medium hover:bg-royal-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -1494,7 +1494,7 @@ export default function ItineraryBuilderPage() {
         <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4">
           {/* Back */}
           <button
-            onClick={() => router.push("/assignments")}
+            onClick={() => router.push("/admin/assignments")}
             className="p-2 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors flex-shrink-0"
             aria-label="Back to assignments"
           >
@@ -1556,9 +1556,9 @@ export default function ItineraryBuilderPage() {
           {/* Preview toggle */}
           <button
             onClick={() => setPreviewMode(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 bg-white border border-ivory-300 hover:bg-ivory-100 transition-colors flex-shrink-0 shadow-sm"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-3.5 h-3.5 text-stone-500" />
             Preview
           </button>
 
@@ -1566,12 +1566,12 @@ export default function ItineraryBuilderPage() {
           <button
             onClick={handleSaveDraft}
             disabled={savingDraft || !selectedDayId}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 flex-shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 bg-white border border-ivory-300 hover:bg-ivory-100 transition-colors disabled:opacity-50 flex-shrink-0 shadow-sm"
           >
             {savingDraft ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Save className="w-3.5 h-3.5" />
+              <Save className="w-3.5 h-3.5 text-stone-500" />
             )}
             Save Draft
           </button>
@@ -1584,7 +1584,7 @@ export default function ItineraryBuilderPage() {
               !assignment ||
               assignment.status !== "in_progress"
             }
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-royal-600 hover:bg-royal-700 transition-colors disabled:opacity-50 flex-shrink-0"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gold-500 hover:bg-gold-600 shadow-gold transition-colors disabled:opacity-50 flex-shrink-0"
           >
             {submitting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1703,7 +1703,7 @@ export default function ItineraryBuilderPage() {
               </p>
               <button
                 onClick={handleAddDay}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-royal-600 text-white rounded-xl text-sm font-medium hover:bg-royal-700 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-royal-gradient text-white rounded-xl text-sm font-semibold hover:opacity-95 shadow-premium transition-opacity"
               >
                 <Plus className="w-4 h-4" />
                 Add First Day
@@ -1715,7 +1715,7 @@ export default function ItineraryBuilderPage() {
               <div className="card-premium mb-5">
                 <div className="flex items-start gap-3">
                   {/* Day Number Badge */}
-                  <span className="bg-royal-600 text-white text-sm font-bold px-3 py-1.5 rounded-xl flex-shrink-0 mt-1">
+                  <span className="bg-royal-gradient text-white text-sm font-bold px-3.5 py-2 rounded-xl flex-shrink-0 mt-0.5 shadow-premium">
                     Day {selectedDay.dayNumber}
                   </span>
 
@@ -1801,11 +1801,11 @@ export default function ItineraryBuilderPage() {
               <WarningsPanel items={selectedDayItems} />
 
               {/* Items Section */}
-              <div className="card-premium">
+              <div className="card-premium p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">
-                    Items
-                    <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  <h3 className="font-display text-lg font-bold text-royal-950 flex items-center gap-2">
+                    <span>Day Timeline &amp; Activities</span>
+                    <span className="text-xs bg-ivory-100 text-stone-600 px-2.5 py-0.5 rounded-full border border-ivory-200 font-sans font-semibold">
                       {selectedDayItems.length}
                     </span>
                   </h3>
@@ -1814,10 +1814,10 @@ export default function ItineraryBuilderPage() {
                       setEditingItem(null);
                       setItemPanelOpen(true);
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-royal-600 text-white text-xs font-medium rounded-xl hover:bg-royal-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-royal-gradient text-white text-xs font-semibold rounded-xl hover:opacity-95 shadow-premium transition-opacity"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    Add Item
+                    Add Activity
                   </button>
                 </div>
 
@@ -1839,7 +1839,7 @@ export default function ItineraryBuilderPage() {
                         setEditingItem(null);
                         setItemPanelOpen(true);
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-royal-600 text-white text-xs font-medium rounded-xl hover:bg-royal-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-royal-gradient text-white text-xs font-semibold rounded-xl hover:opacity-95 shadow-premium transition-opacity"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Add First Item
