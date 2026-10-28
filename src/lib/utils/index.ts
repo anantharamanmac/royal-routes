@@ -7,28 +7,84 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: Timestamp | Date | null | undefined, fmt = "dd MMM yyyy"): string {
+export function formatDate(date: any, fmt = "dd MMM yyyy"): string {
   if (!date) return "To be confirmed";
-  const d = date instanceof Timestamp ? date.toDate() : date;
-  return format(d, fmt);
+  try {
+    let d: Date;
+    if (typeof date.toDate === "function") {
+      d = date.toDate();
+    } else if (typeof date.seconds === "number") {
+      d = new Date(date.seconds * 1000);
+    } else if (date instanceof Date) {
+      d = date;
+    } else {
+      d = new Date(date);
+    }
+    if (isNaN(d.getTime())) return "To be confirmed";
+    return format(d, fmt);
+  } catch {
+    return "To be confirmed";
+  }
 }
 
-export function formatDateTime(date: Timestamp | Date | null | undefined): string {
+export function formatDateTime(date: any): string {
   if (!date) return "To be confirmed";
-  const d = date instanceof Timestamp ? date.toDate() : date;
-  return format(d, "dd MMM yyyy, hh:mm a");
+  try {
+    let d: Date;
+    if (typeof date.toDate === "function") {
+      d = date.toDate();
+    } else if (typeof date.seconds === "number") {
+      d = new Date(date.seconds * 1000);
+    } else if (date instanceof Date) {
+      d = date;
+    } else {
+      d = new Date(date);
+    }
+    if (isNaN(d.getTime())) return "To be confirmed";
+    return format(d, "dd MMM yyyy, hh:mm a");
+  } catch {
+    return "To be confirmed";
+  }
 }
 
-export function fromNow(date: Timestamp | Date | null | undefined): string {
+export function fromNow(date: any): string {
   if (!date) return "";
-  const d = date instanceof Timestamp ? date.toDate() : date;
-  return formatDistanceToNow(d, { addSuffix: true });
+  try {
+    let d: Date;
+    if (typeof date.toDate === "function") {
+      d = date.toDate();
+    } else if (typeof date.seconds === "number") {
+      d = new Date(date.seconds * 1000);
+    } else if (date instanceof Date) {
+      d = date;
+    } else {
+      d = new Date(date);
+    }
+    if (isNaN(d.getTime())) return "";
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch {
+    return "";
+  }
 }
 
-export function daysUntil(date: Timestamp | Date | null | undefined): number {
+export function daysUntil(date: any): number {
   if (!date) return 0;
-  const d = date instanceof Timestamp ? date.toDate() : date;
-  return differenceInDays(d, new Date());
+  try {
+    let d: Date;
+    if (typeof date.toDate === "function") {
+      d = date.toDate();
+    } else if (typeof date.seconds === "number") {
+      d = new Date(date.seconds * 1000);
+    } else if (date instanceof Date) {
+      d = date;
+    } else {
+      d = new Date(date);
+    }
+    if (isNaN(d.getTime())) return 0;
+    return differenceInDays(d, new Date());
+  } catch {
+    return 0;
+  }
 }
 
 export function formatCurrency(amount: number | undefined, currency = "INR"): string {

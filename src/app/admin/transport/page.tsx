@@ -301,11 +301,10 @@ export default function TransportManagerPage() {
           <button
             key={tp}
             onClick={() => setFilterType(tp)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap ${
-              filterType === tp
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap ${filterType === tp
                 ? "bg-royal-gradient text-white shadow-premium"
                 : "bg-white border border-ivory-200 text-stone-600 hover:bg-ivory-50"
-            }`}
+              }`}
           >
             {tp === "all" ? "All Services" : tp}
           </button>
