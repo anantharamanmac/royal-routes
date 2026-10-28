@@ -62,6 +62,7 @@ import {
   Save,
   Info,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 
 // Auth
@@ -1040,6 +1041,7 @@ export default function ItineraryBuilderPage() {
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSavedAtRef = useRef<number | null>(null);
+  const [isPopulating, setIsPopulating] = useState(false);
 
   // ── DnD Sensors ─────────────────────────────────────────────────────────────
   const sensors = useSensors(
@@ -1063,12 +1065,16 @@ export default function ItineraryBuilderPage() {
 
   // ── Access check ────────────────────────────────────────────────────────────
   const isAuthorized = useMemo(() => {
-    if (!appUser || !assignment) return false;
+    if (!appUser) return false;
+    if (appUser.role === "master_admin") return true;
+    if (!assignment) {
+      return appUser.assignedDestinationIds?.includes(destinationId) ?? false;
+    }
     return (
       appUser.uid === assignment.assignedAdminId ||
-      appUser.role === "master_admin"
+      (appUser.assignedDestinationIds?.includes(destinationId) ?? false)
     );
-  }, [appUser, assignment]);
+  }, [appUser, assignment, destinationId]);
 
   // ── Deadline check ──────────────────────────────────────────────────────────
   const isOverdue = useMemo(() => {
@@ -1096,15 +1102,74 @@ export default function ItineraryBuilderPage() {
             a.destinationId === destinationId &&
             (a.assignedAdminId === appUser.uid || appUser.role === "master_admin")
         );
-        if (!cancelled && myAssignment) {
-          setAssignment(myAssignment);
-          setAssignmentId(myAssignment.id);
-        }
 
         // Load destination
         const destinations = await getDestinations(TRIP_ID);
-        const dest = destinations.find((d: Destination) => d.id === destinationId);
+        let dest = destinations.find((d: Destination) => d.id === destinationId);
+        if (!dest) {
+          const fallbackMap: Record<string, { name: string; state: string; desc: string }> = {
+            "dest-rajasthan": {
+              name: "Rajasthan (Jaipur Hub & Desert Circuit)",
+              state: "Rajasthan",
+              desc: "Amber Fort, City Palace, Hawa Mahal, and royal bazaars.",
+            },
+            "dest-delhi": {
+              name: "Delhi (Imperial & Historic Capital)",
+              state: "Delhi",
+              desc: "Qutub Minar, Red Fort, Chandni Chowk, and India Gate.",
+            },
+            "dest-agra": {
+              name: "Agra (Taj Mahal & Mughal Splendour)",
+              state: "Uttar Pradesh",
+              desc: "Sunrise Taj Mahal, Agra Fort, and Fatehpur Sikri excursion.",
+            },
+          };
+          const info = fallbackMap[destinationId] || {
+            name: destinationId.replace("dest-", "").toUpperCase(),
+            state: "India",
+            desc: "Itinerary schedule and activities.",
+          };
+          dest = {
+            id: destinationId,
+            name: info.name,
+            state: info.state,
+            country: "India",
+            sequenceOrder: 1,
+            status: "in_progress",
+            arrivalDate: null,
+            departureDate: null,
+            tripId: TRIP_ID,
+            description: info.desc,
+            createdBy: appUser.uid,
+            createdAt: null as never,
+            updatedAt: null as never,
+          };
+        }
         if (!cancelled && dest) setDestination(dest);
+
+        if (!cancelled) {
+          if (myAssignment) {
+            setAssignment(myAssignment);
+            setAssignmentId(myAssignment.id);
+          } else {
+            // Safe fallback assignment so admins can immediately build and save days
+            const fallbackAssign: Assignment = {
+              id: `assign-${destinationId}`,
+              tripId: TRIP_ID,
+              destinationId,
+              assignedAdminId: appUser.uid,
+              title: `${dest?.name ?? "Destination"} Planning`,
+              deadline: null,
+              priority: "high",
+              status: "in_progress",
+              createdBy: appUser.uid,
+              createdAt: null as never,
+              updatedAt: null as never,
+            };
+            setAssignment(fallbackAssign);
+            setAssignmentId(fallbackAssign.id);
+          }
+        }
       } catch (err) {
         if (!cancelled) toast.error("Failed to load assignment data.");
         console.error(err);
@@ -1276,6 +1341,117 @@ export default function ItineraryBuilderPage() {
       },
     });
   }, []);
+
+  const handlePopulateTemplateDays = useCallback(async () => {
+    if (!appUser) return;
+    setIsPopulating(true);
+    try {
+      const templates: Record<
+        string,
+        Array<{
+          title: string;
+          summary: string;
+          items: Array<{ title: string; type: ItineraryItem["type"]; time: string; cost: number; desc: string }>;
+        }>
+      > = {
+        "dest-rajasthan": [
+          {
+            title: "Arrival in Jaipur & Heritage Bazaar Stroll",
+            summary: "Check-in at hotel, evening walk through Johari Bazaar and Bapu Bazaar.",
+            items: [
+              { title: "Hotel Check-in & Freshen Up", type: "hotel", time: "14:00", cost: 0, desc: "Check-in at reserved hotel in Jaipur." },
+              { title: "Johari Bazaar & Bapu Bazaar Walk", type: "shopping", time: "17:00", cost: 500, desc: "Explore pink city handicrafts, textiles, and local snacks." },
+              { title: "Traditional Rajasthani Dinner", type: "food", time: "20:00", cost: 800, desc: "Group dinner with Dal Baati Churma and cultural music." },
+            ],
+          },
+          {
+            title: "Amber Fort & Cultural Evening at Chokhi Dhani",
+            summary: "Morning fort visit with elephant/jeep transit, afternoon City Palace, evening folk village.",
+            items: [
+              { title: "Amber Fort Guided Tour", type: "sightseeing", time: "09:00", cost: 500, desc: "Grand Rajput architecture, Sheesh Mahal, and Maota Lake views." },
+              { title: "City Palace & Jantar Mantar", type: "sightseeing", time: "14:00", cost: 400, desc: "Royal residence museum and UNESCO astronomical observatory." },
+              { title: "Chokhi Dhani Village Experience", type: "activity", time: "18:30", cost: 1200, desc: "Rajasthani folk dance, puppet show, and royal buffet dinner." },
+            ],
+          },
+        ],
+        "dest-delhi": [
+          {
+            title: "Old Delhi Heritage, Red Fort & Chandni Chowk",
+            summary: "Historic Mughal architecture and legendary Chandni Chowk culinary walk.",
+            items: [
+              { title: "Red Fort (Lal Qila) Tour", type: "sightseeing", time: "09:30", cost: 300, desc: "Mughal sandstone fortification built by Emperor Shah Jahan." },
+              { title: "Chandni Chowk Cycle Rickshaw & Food Trail", type: "food", time: "13:00", cost: 600, desc: "Paranthe Wali Gali, lassi, and ancient spice market." },
+              { title: "Jama Masjid Exploration", type: "sightseeing", time: "16:00", cost: 100, desc: "One of the largest historic mosques in India." },
+            ],
+          },
+        ],
+        "dest-agra": [
+          {
+            title: "Sunrise Taj Mahal & Historic Agra Fort",
+            summary: "Early morning sunrise view of the Taj Mahal followed by Agra Fort and marble craft.",
+            items: [
+              { title: "Sunrise Taj Mahal Experience", type: "sightseeing", time: "06:00", cost: 250, desc: "Witness first morning light over the marble wonder of the world." },
+              { title: "Agra Fort Heritage Walk", type: "sightseeing", time: "10:30", cost: 200, desc: "UNESCO world heritage brick and red sandstone royal citadel." },
+              { title: "Sunset at Mehtab Bagh", type: "sightseeing", time: "17:00", cost: 100, desc: "Charbagh complex overlooking the Yamuna river." },
+            ],
+          },
+        ],
+      };
+
+      const daysForThisDest = templates[destinationId] || [
+        {
+          title: `Exploration Day 1`,
+          summary: `Discover key landmarks and cultural highlights.`,
+          items: [
+            { title: "Morning Sightseeing", type: "sightseeing", time: "09:30", cost: 300, desc: "Guided tour of top destination highlights." },
+            { title: "Group Lunch", type: "food", time: "13:00", cost: 500, desc: "Local cuisine specialty lunch." },
+          ],
+        },
+      ];
+
+      for (let i = 0; i < daysForThisDest.length; i++) {
+        const t = daysForThisDest[i];
+        const newDayId = await addItineraryDay({
+          tripId: TRIP_ID,
+          destinationId,
+          date: null,
+          dayNumber: days.length + i + 1,
+          title: t.title,
+          summary: t.summary,
+          status: "draft",
+          createdBy: appUser.uid,
+        });
+
+        for (let j = 0; j < t.items.length; j++) {
+          const item = t.items[j];
+          await addItineraryItem({
+            dayId: newDayId,
+            tripId: TRIP_ID,
+            destinationId,
+            type: item.type,
+            title: item.title,
+            description: item.desc,
+            startTime: item.time,
+            endTime: "18:00",
+            durationMinutes: 120,
+            estimatedCost: item.cost,
+            bookingStatus: "tbc",
+            sortOrder: j,
+            isOptional: false,
+            isTentative: false,
+            createdBy: appUser.uid,
+          });
+        }
+      }
+
+      toast.success("Authentic day plans and activities populated successfully!");
+    } catch (err) {
+      toast.error("Failed to populate template days.");
+      console.error(err);
+    } finally {
+      setIsPopulating(false);
+    }
+  }, [appUser, destinationId, days.length]);
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
@@ -1615,9 +1791,17 @@ export default function ItineraryBuilderPage() {
             {loadingDays ? (
               <DaySkeleton />
             ) : days.length === 0 ? (
-              <div className="text-center py-10 px-4">
-                <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-center py-10 px-4 space-y-3">
+                <Calendar className="w-8 h-8 mx-auto text-gray-300" />
                 <p className="text-xs text-gray-400">No days yet. Add a day to get started.</p>
+                <button
+                  onClick={handlePopulateTemplateDays}
+                  disabled={isPopulating}
+                  className="w-full text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 py-2 px-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                >
+                  {isPopulating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-600" />}
+                  <span>Quick-Load Days</span>
+                </button>
               </div>
             ) : (
               <ul className="p-2 space-y-1">
@@ -1691,23 +1875,37 @@ export default function ItineraryBuilderPage() {
         <main className="flex-1 overflow-y-auto bg-ivory-50 px-6 py-6">
           {!selectedDay ? (
             /* Empty state – no day selected */
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-20 h-20 bg-royal-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-10 h-10 text-royal-400" />
+            <div className="flex flex-col items-center justify-center h-full text-center max-w-md mx-auto py-12">
+              <div className="w-20 h-20 bg-royal-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-royal-100">
+                <Calendar className="w-10 h-10 text-royal-600" />
               </div>
-              <h3 className="font-display text-xl font-semibold text-gray-900 mb-2">
-                No Day Selected
+              <h3 className="font-display text-2xl font-bold text-royal-950 mb-2">
+                {destination?.name ?? "Destination"} Itinerary
               </h3>
-              <p className="text-gray-500 text-sm mb-6 max-w-xs">
-                Select a day from the sidebar to start editing, or add a new day.
+              <p className="text-stone-500 text-sm mb-6 leading-relaxed">
+                {days.length === 0
+                  ? "No schedule days created yet. You can initialize authentic expedition days or create a blank Day 1."
+                  : "Select a day from the left sidebar to edit timings, or add another day."}
               </p>
-              <button
-                onClick={handleAddDay}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-royal-gradient text-white rounded-xl text-sm font-semibold hover:opacity-95 shadow-premium transition-opacity"
-              >
-                <Plus className="w-4 h-4" />
-                Add First Day
-              </button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+                <button
+                  onClick={handleAddDay}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-royal-gradient text-white rounded-xl text-sm font-semibold hover:opacity-95 shadow-premium transition-opacity"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Blank Day
+                </button>
+                {days.length === 0 && (
+                  <button
+                    onClick={handlePopulateTemplateDays}
+                    disabled={isPopulating}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-sm font-semibold shadow-premium transition-all disabled:opacity-50"
+                  >
+                    {isPopulating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    <span>{isPopulating ? "Populating…" : "Load Suggested Days & Sights"}</span>
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="max-w-3xl mx-auto">
