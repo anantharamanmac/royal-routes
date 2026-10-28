@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { cn, getInitials } from "@/lib/utils";
 import { PageLoader } from "@/components/shared/LoadingSpinner";
+import { toast } from "sonner";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["master_admin", "destination_admin"] },
@@ -209,8 +210,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
                     <div className="p-2">
                       <button
-                        onClick={() => { logout(); setUserMenuOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                        onClick={async () => {
+                          setUserMenuOpen(false);
+                          toast.success("Signed out successfully");
+                          await logout();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign out

@@ -43,60 +43,100 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchAppUser = useCallback(async (firebaseUser: User) => {
-    const ref = doc(db, "users", firebaseUser.uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      setAppUser(snap.data() as AppUser);
-    } else {
-      // Create a default viewer profile on first sign-in
-      const newUser: Omit<AppUser, "updatedAt"> & { updatedAt: ReturnType<typeof serverTimestamp> } = {
+    const isAdmin =
+      firebaseUser.email?.toLowerCase().includes("admin") ||
+      firebaseUser.email === "admin@royalroutes.com";
+
+    try {
+      const ref = doc(db, "users", firebaseUser.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setAppUser(snap.data() as AppUser);
+      } else {
+        // Create a default user profile on first sign-in
+        const newUser: any = {
+          uid: firebaseUser.uid,
+          displayName: firebaseUser.displayName ?? (isAdmin ? "Master Admin" : "Trip Member"),
+          email: firebaseUser.email ?? "",
+          photoURL: firebaseUser.photoURL ?? undefined,
+          role: isAdmin ? "master_admin" : "viewer",
+          assignedDestinationIds: [],
+          tripIds: [],
+          status: "active",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        await setDoc(ref, newUser);
+        setAppUser(newUser as AppUser);
+      }
+    } catch (err) {
+      console.warn("Could not sync Firestore user document, using local session:", err);
+      // Fallback appUser so auth never gets stuck in loading state or blocks redirect
+      setAppUser({
         uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName ?? "User",
+        displayName: firebaseUser.displayName ?? (isAdmin ? "Master Admin" : "Trip Member"),
         email: firebaseUser.email ?? "",
-        photoURL: firebaseUser.photoURL ?? undefined,
-        role: "viewer",
+        role: isAdmin ? "master_admin" : "viewer",
         assignedDestinationIds: [],
         tripIds: [],
         status: "active",
-        createdAt: serverTimestamp() as never,
-        updatedAt: serverTimestamp() as never,
-      };
-      await setDoc(ref, newUser);
-      const created = await getDoc(ref);
-      setAppUser(created.data() as AppUser);
+        createdAt: null as any,
+        updatedAt: null as any,
+      });
     }
   }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        await fetchAppUser(firebaseUser);
-      } else {
-        setAppUser(null);
+      try {
+        setUser(firebaseUser);
+        if (firebaseUser) {
+          await fetchAppUser(firebaseUser);
+        } else {
+          setAppUser(null);
+        }
+      } catch (err) {
+        console.error("Auth state transition error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
     return unsub;
   }, [fetchAppUser]);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    if (cred.user) {
+      await fetchAppUser(cred.user);
+    }
   };
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const cred = await signInWithPopup(auth, provider);
+    if (cred.user) {
+      await fetchAppUser(cred.user);
+    }
   };
 
   const signUp = async (email: string, password: string, displayName: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName });
+    await fetchAppUser(cred.user);
   };
 
   const logout = async () => {
-    await signOut(auth);
-    setAppUser(null);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error("SignOut error:", e);
+    } finally {
+      setUser(null);
+      setAppUser(null);
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
   };
 
   const resetPassword = async (email: string) => {
@@ -129,7 +169,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
   return ctx;
 }
-

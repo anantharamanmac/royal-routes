@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn, getInitials } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface NavLink {
   href: string;
@@ -36,7 +37,7 @@ interface TopNavbarProps {
 }
 
 export default function TopNavbar({ unreadCount = 0, onBellClick }: TopNavbarProps) {
-  const { appUser, logout } = useAuth();
+  const { user, appUser, logout } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -113,47 +114,65 @@ export default function TopNavbar({ unreadCount = 0, onBellClick }: TopNavbarPro
             )}
           </button>
 
-          {/* User avatar + dropdown */}
-          <div ref={userMenuRef} className="relative">
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center gap-2 p-1.5 hover:bg-stone-50 rounded-xl transition-colors"
-            >
-              <div className="w-8 h-8 rounded-xl bg-royal-gradient flex items-center justify-center text-white text-xs font-bold">
-                {initials}
-              </div>
-              <ChevronDown className="w-4 h-4 text-stone-400 hidden sm:block" />
-            </button>
+          {/* User avatar + dropdown OR Sign In button */}
+          {user ? (
+            <div ref={userMenuRef} className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 p-1.5 hover:bg-stone-50 rounded-xl transition-colors cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-xl bg-[#007d8a] flex items-center justify-center text-white text-xs font-bold shadow-xs">
+                  {initials}
+                </div>
+                <ChevronDown className="w-4 h-4 text-stone-400 hidden sm:block" />
+              </button>
 
-            {userMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-ivory-200 rounded-2xl shadow-premium-lg overflow-hidden z-50">
-                <div className="px-4 py-3 border-b border-ivory-100">
-                  <p className="text-sm font-semibold text-stone-900">{appUser?.displayName}</p>
-                  <p className="text-xs text-stone-400 mt-0.5">{appUser?.email}</p>
-                  <span className="badge bg-royal-50 text-royal-700 border-royal-200 mt-1.5 text-[10px]">
-                    {roleLabel}
-                  </span>
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                    <p className="text-sm font-bold text-gray-900 truncate">
+                      {appUser?.displayName ?? user.displayName ?? "User"}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{user.email}</p>
+                    <span className="inline-block px-2 py-0.5 bg-teal-50 text-[#007d8a] border border-teal-200 rounded-md mt-1.5 text-[10px] font-bold uppercase">
+                      {roleLabel}
+                    </span>
+                  </div>
+                  <div className="p-2 space-y-1">
+                    {(appUser?.role === "master_admin" || appUser?.role === "destination_admin") && (
+                      <Link
+                        href="/admin/dashboard"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-teal-50 hover:text-[#007d8a] rounded-xl transition-colors"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-teal-600" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={async () => {
+                        setUserMenuOpen(false);
+                        toast.success("Signed out successfully");
+                        await logout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign out
+                    </button>
+                  </div>
                 </div>
-                <div className="p-2">
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-xl transition-colors"
-                    onClick={() => setUserMenuOpen(false)}
-                  >
-                    <User className="w-4 h-4 text-stone-400" />
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => { logout(); setUserMenuOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Sign out
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#007d8a] hover:bg-[#006670] text-white text-xs font-bold transition-all shadow-sm"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </Link>
+          )}
 
           {/* Mobile hamburger */}
           <button
