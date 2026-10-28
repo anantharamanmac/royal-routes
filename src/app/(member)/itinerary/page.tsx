@@ -10,7 +10,7 @@ import {
   Sparkles,
   MapPin,
 } from "lucide-react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useDestinations } from "@/lib/hooks/useDestinations";
 import { ItineraryDay, ItineraryItem } from "@/lib/types";
@@ -31,18 +31,16 @@ export default function MasterItineraryPage() {
   useEffect(() => {
     const qDays = query(
       collection(db, "itineraryDays"),
-      where("tripId", "==", TRIP_ID),
-      orderBy("dayNumber", "asc")
+      where("tripId", "==", TRIP_ID)
     );
     const unsubDays = onSnapshot(
       qDays,
       (snap) => {
         const d = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ItineraryDay));
-        // Members see published days, and also draft/approved in demo mode
+        d.sort((a, b) => (a.dayNumber ?? 0) - (b.dayNumber ?? 0));
         setDays(d);
       },
       () => {
-        // Fallback for empty state or index building
         setDays([]);
       }
     );

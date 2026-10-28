@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onSnapshot, collection, query, where, orderBy } from "firebase/firestore";
+import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { ItineraryDay } from "@/lib/types";
 
@@ -14,8 +14,7 @@ export function useItineraryDays(tripId: string, destinationId?: string, publish
     if (!tripId) return;
     let q = query(
       collection(db, "itineraryDays"),
-      where("tripId", "==", tripId),
-      orderBy("dayNumber", "asc")
+      where("tripId", "==", tripId)
     );
     if (destinationId) {
       q = query(q, where("destinationId", "==", destinationId));
@@ -26,10 +25,16 @@ export function useItineraryDays(tripId: string, destinationId?: string, publish
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setDays(snap.docs.map((d) => ({ id: d.id, ...d.data() } as ItineraryDay)));
+        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as ItineraryDay));
+        items.sort((a, b) => (a.dayNumber ?? 0) - (b.dayNumber ?? 0));
+        setDays(items);
         setLoading(false);
       },
-      (err) => { setError(err); setLoading(false); }
+      (err) => {
+        console.warn("[useItineraryDays] Realtime listener notice:", err);
+        setDays([]);
+        setLoading(false);
+      }
     );
     return unsub;
   }, [tripId, destinationId, publishedOnly]);

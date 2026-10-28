@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onSnapshot, collection, query, where, orderBy } from "firebase/firestore";
+import { onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Destination } from "@/lib/types";
 
@@ -14,13 +14,14 @@ export function useDestinations(tripId: string) {
     if (!tripId) return;
     const q = query(
       collection(db, "destinations"),
-      where("tripId", "==", tripId),
-      orderBy("sequenceOrder", "asc")
+      where("tripId", "==", tripId)
     );
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setDestinations(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Destination)));
+        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Destination));
+        items.sort((a, b) => (a.sequenceOrder ?? 0) - (b.sequenceOrder ?? 0));
+        setDestinations(items);
         setLoading(false);
       },
       (err) => { setError(err); setLoading(false); }

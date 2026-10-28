@@ -537,7 +537,7 @@ function ItemFormPanel({
       {/* Panel */}
       <div
         className={cn(
-          "fixed top-0 right-0 h-full w-[400px] z-40 bg-white shadow-2xl border-l border-gray-100 flex flex-col transition-transform duration-300 ease-in-out",
+          "fixed top-0 right-0 h-full w-full sm:w-[420px] max-w-full z-40 bg-white shadow-2xl border-l border-gray-100 flex flex-col transition-transform duration-300 ease-in-out",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
@@ -1682,117 +1682,126 @@ export default function ItineraryBuilderPage() {
   // ── Main Render ──────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-ivory-50 flex flex-col">
-      {/* ── Header Bar ─────────────────────────────────────────────────────────── */}
+      {/* ── Header Bar ── */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
-        <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4">
-          {/* Back */}
-          <button
-            onClick={() => router.push("/admin/assignments")}
-            className="p-2 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors flex-shrink-0"
-            aria-label="Back to assignments"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-
-          {/* Destination + Status */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Destination + Back */}
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => router.push("/admin/assignments")}
+              className="p-1.5 sm:p-2 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors flex-shrink-0"
+              aria-label="Back to assignments"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <MapPin className="w-5 h-5 text-royal-500 flex-shrink-0" />
-            <span className="font-display font-semibold text-gray-900 truncate text-lg">
+            <span className="font-display font-semibold text-gray-900 truncate text-base sm:text-lg">
               {destination?.name ?? "Loading…"}
             </span>
             {assignment && (
               <span
                 className={cn(
-                  "text-xs font-medium px-2.5 py-0.5 rounded-full flex-shrink-0",
+                  "text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0",
                   assignmentStatusClass
                 )}
               >
                 {ASSIGNMENT_STATUS_LABELS[assignment.status]}
               </span>
             )}
-            {assignment?.deadline && (
-              <span
-                className={cn(
-                  "text-xs font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1",
-                  isOverdue
-                    ? "bg-red-100 text-red-700"
-                    : "bg-amber-100 text-amber-700"
-                )}
-              >
-                <Calendar className="w-3 h-3" />
-                Due:{" "}
-                {formatDate(
-                  typeof (assignment.deadline as unknown as { toDate?: () => Date }).toDate === "function"
-                    ? (assignment.deadline as unknown as { toDate: () => Date }).toDate()
-                    : new Date(assignment.deadline as unknown as string)
-                )}
-              </span>
-            )}
           </div>
 
-          {/* Auto-save indicator */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0">
+          {/* Action Buttons Row */}
+          <div className="flex items-center gap-2 justify-end flex-wrap">
             {autoSaveStatus === "saving" && (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Saving…</span>
-              </>
+              <div className="flex items-center gap-1 text-[11px] text-gray-400">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span className="hidden sm:inline">Saving…</span>
+              </div>
             )}
             {autoSaveStatus === "saved" && (
-              <>
-                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-green-600">Auto-saved</span>
-              </>
+              <div className="flex items-center gap-1 text-[11px] text-green-600">
+                <CheckCircle className="w-3 h-3 text-green-500" />
+                <span className="hidden sm:inline">Saved</span>
+              </div>
             )}
+
+            {/* Preview toggle */}
+            <button
+              onClick={() => setPreviewMode(true)}
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 bg-white border border-ivory-300 hover:bg-ivory-100 transition-colors flex-shrink-0 shadow-sm"
+            >
+              <Eye className="w-3.5 h-3.5 text-stone-500" />
+              <span>Preview</span>
+            </button>
+
+            {/* Save Draft */}
+            <button
+              onClick={handleSaveDraft}
+              disabled={savingDraft || !selectedDayId}
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 bg-white border border-ivory-300 hover:bg-ivory-100 transition-colors disabled:opacity-50 flex-shrink-0 shadow-sm"
+            >
+              {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-stone-500" />}
+              <span>Save</span>
+            </button>
+
+            {/* Submit for Review */}
+            <button
+              onClick={handleSubmitForReview}
+              disabled={submitting || !assignment || assignment.status !== "in_progress"}
+              className="inline-flex items-center gap-1 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gold-500 hover:bg-gold-600 shadow-gold transition-colors disabled:opacity-50 flex-shrink-0"
+            >
+              {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              <span>Submit</span>
+            </button>
           </div>
-
-          {/* Preview toggle */}
-          <button
-            onClick={() => setPreviewMode(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 bg-white border border-ivory-300 hover:bg-ivory-100 transition-colors flex-shrink-0 shadow-sm"
-          >
-            <Eye className="w-3.5 h-3.5 text-stone-500" />
-            Preview
-          </button>
-
-          {/* Save Draft */}
-          <button
-            onClick={handleSaveDraft}
-            disabled={savingDraft || !selectedDayId}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 bg-white border border-ivory-300 hover:bg-ivory-100 transition-colors disabled:opacity-50 flex-shrink-0 shadow-sm"
-          >
-            {savingDraft ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Save className="w-3.5 h-3.5 text-stone-500" />
-            )}
-            Save Draft
-          </button>
-
-          {/* Submit for Review */}
-          <button
-            onClick={handleSubmitForReview}
-            disabled={
-              submitting ||
-              !assignment ||
-              assignment.status !== "in_progress"
-            }
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-gold-500 hover:bg-gold-600 shadow-gold transition-colors disabled:opacity-50 flex-shrink-0"
-          >
-            {submitting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Send className="w-3.5 h-3.5" />
-            )}
-            Submit for Review
-          </button>
         </div>
       </header>
 
-      {/* ── Body ───────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 57px)" }}>
-        {/* ── LEFT SIDEBAR ────────────────────────────────────────────────────── */}
-        <aside className="w-[280px] bg-white border-r border-gray-100 flex flex-col flex-shrink-0 overflow-hidden">
+      {/* ── Body ── */}
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden" style={{ minHeight: "calc(100vh - 57px)" }}>
+        {/* Mobile Horizontal Day Selector (shown on < lg screens) */}
+        <div className="lg:hidden bg-white border-b border-gray-100 px-3 py-2 flex items-center gap-2 overflow-x-auto shrink-0 shadow-sm">
+          {days.map((day) => (
+            <button
+              key={day.id}
+              onClick={() => setSelectedDayId(day.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0",
+                selectedDayId === day.id
+                  ? "bg-royal-600 text-white shadow-premium"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              )}
+            >
+              <span>Day {day.dayNumber}</span>
+              <span
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  selectedDayId === day.id ? "bg-amber-300" : DAY_STATUS_COLORS[day.status]
+                )}
+              />
+            </button>
+          ))}
+          <button
+            onClick={handleAddDay}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-royal-50 border border-royal-200 text-royal-700 hover:bg-royal-100 whitespace-nowrap flex items-center gap-1 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Day</span>
+          </button>
+          {days.length === 0 && (
+            <button
+              onClick={handlePopulateTemplateDays}
+              disabled={isPopulating}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 whitespace-nowrap flex items-center gap-1 shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Load Suggested</span>
+            </button>
+          )}
+        </div>
+
+        {/* Desktop Sidebar (hidden on mobile, shown on lg+) */}
+        <aside className="hidden lg:flex w-[280px] bg-white border-r border-gray-100 flex-col flex-shrink-0 overflow-hidden">
           {/* Sidebar Header */}
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700">
