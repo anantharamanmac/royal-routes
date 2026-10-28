@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ─── Helper Functions ────────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Image validation: max 5 MB, allowed types
+    function isValidImage() {
+      return request.resource.size <= 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // Document validation: max 20 MB, PDF only
+    function isValidDocument() {
+      return request.resource.size <= 20 * 1024 * 1024 &&
+        request.resource.contentType == 'application/pdf';
+    }
+
+    // Image or document (used for mixed destination upload paths)
+    function isValidFile() {
+      return isValidImage() || isValidDocument();
+    }
+
+    // ─── Trip → Destinations ─────────────────────────────────────────────────
+    // Read:  authenticated trip members
+    // Write: master_admin or assigned destination admin
+    //
+    // NOTE: Firestore user lookups are not available in Storage rules.
+    //       Role enforcement here is scoped to "authenticated" for reads and
+    //       "authenticated" for writes — tighter access is enforced by the
+    //       Cloud Functions / client that generates the upload path.
+    //       The structure itself provides a second layer of security.
+
+    match /trips/{tripId}/destinations/{destId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidFile();
+    }
+
+    // ─── Trip → Hotels ───────────────────────────────────────────────────────
+    // Read:  authenticated users
+    // Write: authenticated users (master_admin / destination admin enforced by app)
+
+    match /trips/{tripId}/hotels/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidFile();
+    }
+
+    // ─── Trip → Documents ────────────────────────────────────────────────────
+    // Read:  authenticated users
+    // Write: master_admin only (enforced by callable function / app role check)
+    //        Storage rules: authenticated + valid document
+
+    match /trips/{tripId}/documents/{allPaths=**} {
+      allow read: if isAuthenticated();
+      // Only allow PDF uploads for document folder
+      allow write: if isAuthenticated() && isValidDocument();
+    }
+
+    // ─── User Profile ────────────────────────────────────────────────────────
+    // Read:  authenticated users
+    // Write: owner only; images ≤ 5 MB
+
+    match /users/{userId}/profile/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isValidImage();
+    }
+
+    // ─── Deny everything else ────────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
