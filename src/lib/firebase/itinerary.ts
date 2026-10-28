@@ -11,7 +11,6 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy,
   writeBatch,
   serverTimestamp,
 } from "firebase/firestore";
@@ -49,14 +48,14 @@ export async function getItineraryDays(
     const constraints = [
       where("tripId", "==", tripId),
       ...(destinationId ? [where("destinationId", "==", destinationId)] : []),
-      orderBy("dayNumber", "asc"),
     ];
     const q = query(collection(db, DAYS_COLLECTION), ...constraints);
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ItineraryDay));
+    const days = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ItineraryDay));
+    return days.sort((a, b) => (a.dayNumber ?? 0) - (b.dayNumber ?? 0));
   } catch (error) {
-    console.error(`[getItineraryDays] Failed to fetch days for trip "${tripId}":`, error);
-    throw error;
+    console.warn(`[getItineraryDays] Could not fetch days for trip "${tripId}":`, error);
+    return [];
   }
 }
 
@@ -121,8 +120,7 @@ export function listenToItineraryDays(
 ): Unsubscribe {
   const q = query(
     collection(db, DAYS_COLLECTION),
-    where("tripId", "==", tripId),
-    orderBy("dayNumber", "asc")
+    where("tripId", "==", tripId)
   );
 
   return onSnapshot(
@@ -131,10 +129,11 @@ export function listenToItineraryDays(
       const days = snapshot.docs.map(
         (d) => ({ id: d.id, ...d.data() } as ItineraryDay)
       );
+      days.sort((a, b) => (a.dayNumber ?? 0) - (b.dayNumber ?? 0));
       callback(days);
     },
     (error) => {
-      console.error(
+      console.warn(
         `[listenToItineraryDays] Listener error for trip "${tripId}":`,
         error
       );
@@ -154,8 +153,8 @@ export async function getItineraryItem(itemId: string): Promise<ItineraryItem | 
     if (!snapshot.exists()) return null;
     return { id: snapshot.id, ...snapshot.data() } as ItineraryItem;
   } catch (error) {
-    console.error(`[getItineraryItem] Failed to fetch item "${itemId}":`, error);
-    throw error;
+    console.warn(`[getItineraryItem] Could not fetch item "${itemId}":`, error);
+    return null;
   }
 }
 
@@ -166,14 +165,14 @@ export async function getItineraryItems(dayId: string): Promise<ItineraryItem[]>
   try {
     const q = query(
       collection(db, ITEMS_COLLECTION),
-      where("dayId", "==", dayId),
-      orderBy("sortOrder", "asc")
+      where("dayId", "==", dayId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ItineraryItem));
+    const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ItineraryItem));
+    return items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   } catch (error) {
-    console.error(`[getItineraryItems] Failed to fetch items for day "${dayId}":`, error);
-    throw error;
+    console.warn(`[getItineraryItems] Could not fetch items for day "${dayId}":`, error);
+    return [];
   }
 }
 
@@ -238,8 +237,7 @@ export function listenToItineraryItems(
 ): Unsubscribe {
   const q = query(
     collection(db, ITEMS_COLLECTION),
-    where("dayId", "==", dayId),
-    orderBy("sortOrder", "asc")
+    where("dayId", "==", dayId)
   );
 
   return onSnapshot(
@@ -248,10 +246,11 @@ export function listenToItineraryItems(
       const items = snapshot.docs.map(
         (d) => ({ id: d.id, ...d.data() } as ItineraryItem)
       );
+      items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
       callback(items);
     },
     (error) => {
-      console.error(
+      console.warn(
         `[listenToItineraryItems] Listener error for day "${dayId}":`,
         error
       );

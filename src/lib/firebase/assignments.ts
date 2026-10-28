@@ -11,7 +11,6 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy,
   serverTimestamp,
 } from "firebase/firestore";
 import type { Unsubscribe } from "firebase/firestore";
@@ -40,14 +39,13 @@ export async function getAssignments(tripId: string): Promise<Assignment[]> {
   try {
     const q = query(
       collection(db, COLLECTION),
-      where("tripId", "==", tripId),
-      orderBy("createdAt", "desc")
+      where("tripId", "==", tripId)
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Assignment));
   } catch (error) {
-    console.error(`[getAssignments] Failed to fetch assignments for trip "${tripId}":`, error);
-    throw error;
+    console.warn(`[getAssignments] Could not fetch assignments for trip "${tripId}":`, error);
+    return [];
   }
 }
 
@@ -60,17 +58,16 @@ export async function getAssignmentsByDestination(
   try {
     const q = query(
       collection(db, COLLECTION),
-      where("destinationId", "==", destinationId),
-      orderBy("createdAt", "desc")
+      where("destinationId", "==", destinationId)
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Assignment));
   } catch (error) {
-    console.error(
-      `[getAssignmentsByDestination] Failed to fetch assignments for destination "${destinationId}":`,
+    console.warn(
+      `[getAssignmentsByDestination] Could not fetch assignments for destination "${destinationId}":`,
       error
     );
-    throw error;
+    return [];
   }
 }
 
@@ -201,8 +198,7 @@ export function listenToAssignments(
 ): Unsubscribe {
   const q = query(
     collection(db, COLLECTION),
-    where("tripId", "==", tripId),
-    orderBy("createdAt", "desc")
+    where("tripId", "==", tripId)
   );
 
   return onSnapshot(
@@ -214,7 +210,7 @@ export function listenToAssignments(
       callback(assignments);
     },
     (error) => {
-      console.error(
+      console.warn(
         `[listenToAssignments] Listener error for trip "${tripId}":`,
         error
       );
@@ -231,8 +227,7 @@ export function listenToAdminAssignments(
 ): Unsubscribe {
   const q = query(
     collection(db, COLLECTION),
-    where("assignedAdminId", "==", assignedAdminId),
-    orderBy("createdAt", "desc")
+    where("assignedAdminId", "==", assignedAdminId)
   );
 
   return onSnapshot(

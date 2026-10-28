@@ -9,7 +9,6 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy,
   serverTimestamp,
 } from "firebase/firestore";
 import type { Unsubscribe } from "firebase/firestore";
@@ -23,16 +22,16 @@ export async function getDestinations(tripId: string): Promise<Destination[]> {
   try {
     const q = query(
       collection(db, COLLECTION),
-      where("tripId", "==", tripId),
-      orderBy("sequenceOrder", "asc")
+      where("tripId", "==", tripId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(
+    const dests = snapshot.docs.map(
       (d) => ({ id: d.id, ...d.data() } as Destination)
     );
+    return dests.sort((a, b) => (a.sequenceOrder ?? 0) - (b.sequenceOrder ?? 0));
   } catch (error) {
-    console.error(`[getDestinations] Failed to fetch destinations for trip "${tripId}":`, error);
-    throw error;
+    console.warn(`[getDestinations] Could not fetch destinations for trip "${tripId}":`, error);
+    return [];
   }
 }
 
@@ -89,8 +88,7 @@ export function listenToDestinations(
 ): Unsubscribe {
   const q = query(
     collection(db, COLLECTION),
-    where("tripId", "==", tripId),
-    orderBy("sequenceOrder", "asc")
+    where("tripId", "==", tripId)
   );
 
   return onSnapshot(
@@ -99,13 +97,11 @@ export function listenToDestinations(
       const dests = snapshot.docs.map(
         (d) => ({ id: d.id, ...d.data() } as Destination)
       );
+      dests.sort((a, b) => (a.sequenceOrder ?? 0) - (b.sequenceOrder ?? 0));
       callback(dests);
     },
     (error) => {
-      console.error(
-        `[listenToDestinations] Listener error for trip "${tripId}":`,
-        error
-      );
+      console.warn(`[listenToDestinations] Listener issue for trip "${tripId}":`, error);
     }
   );
 }

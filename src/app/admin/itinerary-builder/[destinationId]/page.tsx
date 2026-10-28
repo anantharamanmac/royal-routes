@@ -1094,18 +1094,28 @@ export default function ItineraryBuilderPage() {
       if (!appUser) return;
       setLoadingAssignment(true);
       try {
-        // Load assignments for this destination
-        const { getAssignments } = await import("@/lib/firebase/assignments");
-        const allAssignments = await getAssignments(TRIP_ID);
-        const myAssignment = allAssignments.find(
-          (a: Assignment) =>
-            a.destinationId === destinationId &&
-            (a.assignedAdminId === appUser.uid || appUser.role === "master_admin")
-        );
+        let myAssignment: Assignment | undefined;
+        try {
+          const { getAssignments } = await import("@/lib/firebase/assignments");
+          const allAssignments = await getAssignments(TRIP_ID);
+          myAssignment = allAssignments.find(
+            (a: Assignment) =>
+              a.destinationId === destinationId &&
+              (a.assignedAdminId === appUser.uid || appUser.role === "master_admin")
+          );
+        } catch (e) {
+          console.warn("Could not query assignment docs, using session fallback:", e);
+        }
 
         // Load destination
-        const destinations = await getDestinations(TRIP_ID);
-        let dest = destinations.find((d: Destination) => d.id === destinationId);
+        let dest: Destination | undefined;
+        try {
+          const destinations = await getDestinations(TRIP_ID);
+          dest = destinations.find((d: Destination) => d.id === destinationId);
+        } catch (e) {
+          console.warn("Could not query destinations, using fallback:", e);
+        }
+
         if (!dest) {
           const fallbackMap: Record<string, { name: string; state: string; desc: string }> = {
             "dest-rajasthan": {
@@ -1171,8 +1181,7 @@ export default function ItineraryBuilderPage() {
           }
         }
       } catch (err) {
-        if (!cancelled) toast.error("Failed to load assignment data.");
-        console.error(err);
+        console.warn("Itinerary builder initialized with safe session defaults:", err);
       } finally {
         if (!cancelled) setLoadingAssignment(false);
       }
@@ -1273,7 +1282,7 @@ export default function ItineraryBuilderPage() {
     if (!appUser) return;
     try {
       const newDayNumber = days.length + 1;
-      await addItineraryDay({
+      const newId = await addItineraryDay({
         tripId: TRIP_ID,
         destinationId,
         date: null,
@@ -1282,9 +1291,10 @@ export default function ItineraryBuilderPage() {
         status: "draft",
         createdBy: appUser.uid,
       });
+      setSelectedDayId(newId);
       toast.success(`Day ${newDayNumber} added`);
     } catch (err) {
-      toast.error("Failed to add day.");
+      toast.error(err instanceof Error ? err.message : "Failed to add day.");
       console.error(err);
     }
   }, [appUser, days.length, destinationId]);
@@ -1409,6 +1419,7 @@ export default function ItineraryBuilderPage() {
         },
       ];
 
+      let firstDayId: string | null = null;
       for (let i = 0; i < daysForThisDest.length; i++) {
         const t = daysForThisDest[i];
         const newDayId = await addItineraryDay({
@@ -1421,6 +1432,8 @@ export default function ItineraryBuilderPage() {
           status: "draft",
           createdBy: appUser.uid,
         });
+
+        if (!firstDayId) firstDayId = newDayId;
 
         for (let j = 0; j < t.items.length; j++) {
           const item = t.items[j];
@@ -1444,9 +1457,13 @@ export default function ItineraryBuilderPage() {
         }
       }
 
+      if (firstDayId) {
+        setSelectedDayId(firstDayId);
+      }
+
       toast.success("Authentic day plans and activities populated successfully!");
     } catch (err) {
-      toast.error("Failed to populate template days.");
+      toast.error(err instanceof Error ? err.message : "Failed to populate template days.");
       console.error(err);
     } finally {
       setIsPopulating(false);
