@@ -1,10 +1,19 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --background: #faf8f4;
+  --background: #ffffff;
   --foreground: #1c1917;
   --border: #e8dfd0;
   --radius: 0.75rem;
+
+  /* Teal & Ocean palette (Ref: Shanti Travels) */
+  --teal-primary: #007d8a;
+  --teal-dark: #004851;
+  --teal-banner: #064e5b;
+  --navy-footer: #06121e;
+  --coral-discount: #ff4d4f;
+  --amber-trip: #f5a623;
 
   /* Royal palette */
   --royal-50: #f0f4ff;
@@ -36,34 +45,22 @@
   --gold-500: #f59e0b;
   --gold-600: #d97706;
   --gold-700: #b45309;
-
-  /* Terracotta */
-  --terracotta-50: #fdf4f1;
-  --terracotta-100: #fbe6df;
-  --terracotta-200: #f7cfc4;
-  --terracotta-600: #c83e27;
-  --terracotta-700: #a7321d;
-
-  /* Sandstone */
-  --sandstone-50: #faf8f5;
-  --sandstone-100: #f2ede5;
-  --sandstone-200: #e5dbcc;
-  --sandstone-600: #9f7858;
-}
-
-* {
-  border-color: #e8dfd0;
 }
 
 body {
-  background-color: #faf8f4;
+  background-color: #ffffff;
   color: #1c1917;
-  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, .font-display {
-  font-family: var(--font-playfair), Georgia, serif;
+.font-caveat {
+  font-family: 'Caveat', cursive, sans-serif;
+}
+
+.font-display {
+  font-family: 'Plus Jakarta Sans', var(--font-inter), sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* Custom scrollbars */
