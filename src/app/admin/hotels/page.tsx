@@ -34,7 +34,7 @@ import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDestinations } from "@/lib/hooks/useDestinations";
 import { Hotel, BookingStatus } from "@/lib/types";
-import { formatDate, formatCurrency, cn, FirestoreDateLike } from "@/lib/utils";
+import { formatDate, formatCurrency, cn, formatDateInput } from "@/lib/utils";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { PageLoader } from "@/components/shared/LoadingSpinner";
@@ -47,26 +47,6 @@ const DEFAULT_DESTINATIONS = [
   { id: "dest-delhi", name: "Delhi (Imperial Capital)" },
   { id: "dest-agra", name: "Agra (Taj Mahal Hub)" },
 ];
-
-function parseDateInput(val: FirestoreDateLike): string {
-  if (!val) return "";
-  try {
-    let d: Date;
-    if (typeof (val as Timestamp)?.toDate === "function") {
-      d = (val as Timestamp).toDate();
-    } else if (typeof (val as { seconds: number })?.seconds === "number") {
-      d = new Date((val as { seconds: number }).seconds * 1000);
-    } else if (val instanceof Date) {
-      d = val;
-    } else {
-      d = new Date(val as string | number);
-    }
-    if (isNaN(d.getTime())) return "";
-    return d.toISOString().slice(0, 10);
-  } catch {
-    return "";
-  }
-}
 
 export default function HotelManagerPage() {
   const { appUser } = useAuth();
@@ -221,8 +201,8 @@ export default function HotelManagerPage() {
       address: hotel.address || "",
       phone: hotel.phone || "",
       email: hotel.email || "",
-      checkInDate: parseDateInput(hotel.checkIn),
-      checkOutDate: parseDateInput(hotel.checkOut),
+      checkInDate: formatDateInput(hotel.checkIn),
+      checkOutDate: formatDateInput(hotel.checkOut),
       roomDetails: hotel.roomDetails || "Deluxe Rooms",
       numberOfRooms: hotel.numberOfRooms || 5,
       estimatedPrice: hotel.estimatedPrice || 0,
