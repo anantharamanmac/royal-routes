@@ -30,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${playfair.variable} ${inter.variable} font-body antialiased bg-ivory-50 text-stone-900`}>
+      <body className={`${inter.variable} font-sans antialiased bg-white text-stone-900 selection:bg-[#007d8a] selection:text-white`}>
         <AuthProvider>
           {children}
           <Toaster richColors position="top-right" closeButton />
