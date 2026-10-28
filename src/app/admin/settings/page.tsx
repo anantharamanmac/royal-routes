@@ -110,8 +110,8 @@ export default function TripSettingsPage() {
         "Realistic Rajasthan – Delhi – Agra dataset seeded successfully into Firestore!"
       );
       setIsSeedConfirmOpen(false);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to seed demo dataset.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to seed demo dataset.");
     } finally {
       setIsSeeding(false);
     }

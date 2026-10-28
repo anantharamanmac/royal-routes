@@ -182,8 +182,8 @@ export default function AdminsManagementPage() {
         role: "destination_admin",
         assignedDestinationIds: [],
       });
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to create administrator account.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create administrator account.");
     } finally {
       setIsSubmitting(false);
     }

@@ -7,11 +7,11 @@ import { ItineraryDay } from "@/lib/types";
 
 export function useItineraryDays(tripId: string, destinationId?: string, publishedOnly = false) {
   const [days, setDays] = useState<ItineraryDay[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(tripId));
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!tripId) { setLoading(false); return; }
+    if (!tripId) return;
     let q = query(
       collection(db, "itineraryDays"),
       where("tripId", "==", tripId),

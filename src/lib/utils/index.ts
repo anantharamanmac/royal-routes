@@ -3,22 +3,31 @@ import { twMerge } from "tailwind-merge";
 import { Timestamp } from "firebase/firestore";
 import { format, formatDistanceToNow, differenceInDays } from "date-fns";
 
+export type FirestoreDateLike =
+  | Timestamp
+  | Date
+  | string
+  | number
+  | { seconds: number; nanoseconds?: number; toDate?: () => Date }
+  | null
+  | undefined;
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: any, fmt = "dd MMM yyyy"): string {
+export function formatDate(date: FirestoreDateLike, fmt = "dd MMM yyyy"): string {
   if (!date) return "To be confirmed";
   try {
     let d: Date;
-    if (typeof date.toDate === "function") {
-      d = date.toDate();
-    } else if (typeof date.seconds === "number") {
-      d = new Date(date.seconds * 1000);
+    if (typeof (date as Timestamp)?.toDate === "function") {
+      d = (date as Timestamp).toDate();
+    } else if (typeof (date as { seconds: number })?.seconds === "number") {
+      d = new Date((date as { seconds: number }).seconds * 1000);
     } else if (date instanceof Date) {
       d = date;
     } else {
-      d = new Date(date);
+      d = new Date(date as string | number);
     }
     if (isNaN(d.getTime())) return "To be confirmed";
     return format(d, fmt);
@@ -27,18 +36,18 @@ export function formatDate(date: any, fmt = "dd MMM yyyy"): string {
   }
 }
 
-export function formatDateTime(date: any): string {
+export function formatDateTime(date: FirestoreDateLike): string {
   if (!date) return "To be confirmed";
   try {
     let d: Date;
-    if (typeof date.toDate === "function") {
-      d = date.toDate();
-    } else if (typeof date.seconds === "number") {
-      d = new Date(date.seconds * 1000);
+    if (typeof (date as Timestamp)?.toDate === "function") {
+      d = (date as Timestamp).toDate();
+    } else if (typeof (date as { seconds: number })?.seconds === "number") {
+      d = new Date((date as { seconds: number }).seconds * 1000);
     } else if (date instanceof Date) {
       d = date;
     } else {
-      d = new Date(date);
+      d = new Date(date as string | number);
     }
     if (isNaN(d.getTime())) return "To be confirmed";
     return format(d, "dd MMM yyyy, hh:mm a");
@@ -47,18 +56,18 @@ export function formatDateTime(date: any): string {
   }
 }
 
-export function fromNow(date: any): string {
+export function fromNow(date: FirestoreDateLike): string {
   if (!date) return "";
   try {
     let d: Date;
-    if (typeof date.toDate === "function") {
-      d = date.toDate();
-    } else if (typeof date.seconds === "number") {
-      d = new Date(date.seconds * 1000);
+    if (typeof (date as Timestamp)?.toDate === "function") {
+      d = (date as Timestamp).toDate();
+    } else if (typeof (date as { seconds: number })?.seconds === "number") {
+      d = new Date((date as { seconds: number }).seconds * 1000);
     } else if (date instanceof Date) {
       d = date;
     } else {
-      d = new Date(date);
+      d = new Date(date as string | number);
     }
     if (isNaN(d.getTime())) return "";
     return formatDistanceToNow(d, { addSuffix: true });
@@ -67,18 +76,18 @@ export function fromNow(date: any): string {
   }
 }
 
-export function daysUntil(date: any): number {
+export function daysUntil(date: FirestoreDateLike): number {
   if (!date) return 0;
   try {
     let d: Date;
-    if (typeof date.toDate === "function") {
-      d = date.toDate();
-    } else if (typeof date.seconds === "number") {
-      d = new Date(date.seconds * 1000);
+    if (typeof (date as Timestamp)?.toDate === "function") {
+      d = (date as Timestamp).toDate();
+    } else if (typeof (date as { seconds: number })?.seconds === "number") {
+      d = new Date((date as { seconds: number }).seconds * 1000);
     } else if (date instanceof Date) {
       d = date;
     } else {
-      d = new Date(date);
+      d = new Date(date as string | number);
     }
     if (isNaN(d.getTime())) return 0;
     return differenceInDays(d, new Date());

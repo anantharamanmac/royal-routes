@@ -7,14 +7,11 @@ import { Trip } from "@/lib/types";
 
 export function useTrip(tripId: string) {
   const [trip, setTrip] = useState<Trip | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(tripId));
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!tripId) {
-      setLoading(false);
-      return;
-    }
+    if (!tripId) return;
     const ref = doc(db, "trips", tripId);
     const unsub = onSnapshot(
       ref,

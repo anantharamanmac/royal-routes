@@ -34,7 +34,7 @@ import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDestinations } from "@/lib/hooks/useDestinations";
 import { Hotel, BookingStatus } from "@/lib/types";
-import { formatDate, formatCurrency, cn } from "@/lib/utils";
+import { formatDate, formatCurrency, cn, FirestoreDateLike } from "@/lib/utils";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { PageLoader } from "@/components/shared/LoadingSpinner";
@@ -48,18 +48,18 @@ const DEFAULT_DESTINATIONS = [
   { id: "dest-agra", name: "Agra (Taj Mahal Hub)" },
 ];
 
-function parseDateInput(val: any): string {
+function parseDateInput(val: FirestoreDateLike): string {
   if (!val) return "";
   try {
     let d: Date;
-    if (typeof val.toDate === "function") {
-      d = val.toDate();
-    } else if (typeof val.seconds === "number") {
-      d = new Date(val.seconds * 1000);
+    if (typeof (val as Timestamp)?.toDate === "function") {
+      d = (val as Timestamp).toDate();
+    } else if (typeof (val as { seconds: number })?.seconds === "number") {
+      d = new Date((val as { seconds: number }).seconds * 1000);
     } else if (val instanceof Date) {
       d = val;
     } else {
-      d = new Date(val);
+      d = new Date(val as string | number);
     }
     if (isNaN(d.getTime())) return "";
     return d.toISOString().slice(0, 10);

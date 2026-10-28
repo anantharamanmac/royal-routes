@@ -8,10 +8,10 @@ import { AppNotification } from "@/lib/types";
 export function useNotifications(userId: string | undefined) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(userId));
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return; }
+    if (!userId) return;
     const q = query(
       collection(db, "notifications"),
       where("userId", "==", userId),

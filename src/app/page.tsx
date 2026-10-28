@@ -218,12 +218,8 @@ const GROUP_TESTIMONIALS = [
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<"destinations" | "routemap" | "stages" | "rail">("destinations");
-  const [daysLeft, setDaysLeft] = useState(0);
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
-
-  useEffect(() => {
-    setDaysLeft(daysUntil(DEPARTURE_DATE));
-  }, []);
+  const daysLeft = daysUntil(DEPARTURE_DATE);
 
   return (
     <div className="min-h-screen bg-white text-stone-900 font-sans selection:bg-[#007d8a] selection:text-white">

@@ -7,11 +7,11 @@ import { Assignment } from "@/lib/types";
 
 export function useAssignments(tripId: string, adminId?: string) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(tripId));
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!tripId) { setLoading(false); return; }
+    if (!tripId) return;
     let q = query(collection(db, "assignments"), where("tripId", "==", tripId));
     if (adminId) {
       q = query(q, where("assignedAdminId", "==", adminId));

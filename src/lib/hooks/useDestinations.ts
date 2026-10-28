@@ -7,11 +7,11 @@ import { Destination } from "@/lib/types";
 
 export function useDestinations(tripId: string) {
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(tripId));
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!tripId) { setLoading(false); return; }
+    if (!tripId) return;
     const q = query(
       collection(db, "destinations"),
       where("tripId", "==", tripId),

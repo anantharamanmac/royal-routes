@@ -54,20 +54,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAppUser(snap.data() as AppUser);
       } else {
         // Create a default user profile on first sign-in
-        const newUser: any = {
+        const newUserDoc = {
           uid: firebaseUser.uid,
           displayName: firebaseUser.displayName ?? (isAdmin ? "Master Admin" : "Trip Member"),
           email: firebaseUser.email ?? "",
           photoURL: firebaseUser.photoURL ?? undefined,
-          role: isAdmin ? "master_admin" : "viewer",
+          role: (isAdmin ? "master_admin" : "viewer") as UserRole,
           assignedDestinationIds: [],
           tripIds: [],
-          status: "active",
+          status: "active" as const,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
-        await setDoc(ref, newUser);
-        setAppUser(newUser as AppUser);
+        await setDoc(ref, newUserDoc);
+        setAppUser({
+          ...newUserDoc,
+          createdAt: null as never,
+          updatedAt: null as never,
+        } as AppUser);
       }
     } catch (err) {
       console.warn("Could not sync Firestore user document, using local session:", err);
@@ -80,8 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         assignedDestinationIds: [],
         tripIds: [],
         status: "active",
-        createdAt: null as any,
-        updatedAt: null as any,
+        createdAt: null as never,
+        updatedAt: null as never,
       });
     }
   }, []);

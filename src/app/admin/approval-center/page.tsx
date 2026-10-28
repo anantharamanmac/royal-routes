@@ -278,7 +278,7 @@ export default function ApprovalCenterPage() {
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setFilterTab(tab.key as any)}
+            onClick={() => setFilterTab(tab.key as typeof filterTab)}
             className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 ${
               filterTab === tab.key
                 ? "bg-royal-gradient text-white shadow-premium"

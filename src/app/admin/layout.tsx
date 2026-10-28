@@ -72,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const roleLabel =
     appUser.role === "master_admin" ? "Master Admin" : "Destination Admin";
 
-  const SidebarContent = () => (
+  const renderSidebar = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-royal-800/50">
@@ -134,7 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-ivory-50 flex">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-60 bg-royal-gradient fixed inset-y-0 left-0 z-30 shadow-premium-lg">
-        <SidebarContent />
+        {renderSidebar()}
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -151,7 +151,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <X className="w-5 h-5" />
             </button>
-            <SidebarContent />
+            {renderSidebar()}
           </aside>
         </div>
       )}
