@@ -9,256 +9,109 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getUserDoc() {
+      let path = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(path) ? get(path).data : {};
+    }
+
     function isMasterAdmin() {
-      return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'master_admin';
+      return isAuthenticated() && (
+        request.auth.token.email == 'admin@royalroutes.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'master_admin')
+      );
     }
 
     function isDestinationAdmin() {
-      return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'destination_admin';
-    }
-
-    function isAssignedToDestination(destId) {
-      return isAuthenticated() &&
-        destId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedDestinationIds;
-    }
-
-    function tripMember(tripId) {
-      return isAuthenticated() &&
-        tripId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tripIds;
-    }
-
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return isAuthenticated() && (
+        isMasterAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'destination_admin')
+      );
     }
 
     function isOwner(uid) {
       return isAuthenticated() && request.auth.uid == uid;
     }
 
-    // ─── users ─────────────────────────────────────────────────────────────────
-
+    // ─── Users Collection ───────────────────────────────────────────────────────
     match /users/{uid} {
-      // Authenticated user can read their own document; master_admin can read all
-      allow read: if isOwner(uid) || isMasterAdmin();
-
-      // Allow users to create their own profile upon registration, or master_admin
+      allow read: if isAuthenticated();
       allow create: if isOwner(uid) || isMasterAdmin();
-
-      // master_admin can update role, status, assignedDestinationIds
-      // Users cannot change their own role
-      allow update: if isMasterAdmin() ||
-        (isOwner(uid) &&
-          !('role' in request.resource.data) ||
-          (request.resource.data.role == resource.data.role));
-
-      // No one can delete user documents
-      allow delete: if false;
-    }
-
-    // ─── trips ─────────────────────────────────────────────────────────────────
-
-    match /trips/{tripId} {
-      // All authenticated users can read trips
-      allow read: if isAuthenticated();
-
-      // Only master_admin can create, update, delete
-      allow create, update, delete: if isMasterAdmin();
-    }
-
-    // ─── destinations ──────────────────────────────────────────────────────────
-
-    match /destinations/{destinationId} {
-      // All authenticated users can read destinations
-      allow read: if isAuthenticated();
-
-      // Only master_admin can create or delete
-      allow create, delete: if isMasterAdmin();
-
-      // Destination admin can update their assigned destination;
-      // master_admin can update any
-      allow update: if isMasterAdmin() ||
-        (isDestinationAdmin() && isAssignedToDestination(destinationId));
-    }
-
-    // ─── assignments ───────────────────────────────────────────────────────────
-
-    match /assignments/{assignmentId} {
-      // Master admin can read/write all
-      allow read: if isMasterAdmin() ||
-        (isAuthenticated() && resource.data.assignedAdminId == request.auth.uid);
-
-      allow create: if isMasterAdmin();
-
-      // master_admin can update any field; destination admin can only update
-      // status-related fields (not reassign themselves)
-      allow update: if isMasterAdmin() ||
-        (isAuthenticated() &&
-          resource.data.assignedAdminId == request.auth.uid &&
-          isDestinationAdmin() &&
-          // Only allowed to change status fields, not reassign
-          !('assignedAdminId' in request.resource.data.diff(resource.data).affectedKeys()) &&
-          !('tripId' in request.resource.data.diff(resource.data).affectedKeys()) &&
-          !('destinationId' in request.resource.data.diff(resource.data).affectedKeys()));
-
+      allow update: if isOwner(uid) || isMasterAdmin();
       allow delete: if isMasterAdmin();
     }
 
-    // ─── itineraryDays ─────────────────────────────────────────────────────────
-
-    match /itineraryDays/{dayId} {
-      // Published days: all authenticated trip members can read
-      // Draft/submitted days: master_admin + assigned destination admin can read
-      allow read: if isMasterAdmin() ||
-        (isAuthenticated() &&
-          tripMember(resource.data.tripId) &&
-          resource.data.status == 'published') ||
-        (isDestinationAdmin() &&
-          isAssignedToDestination(resource.data.destinationId));
-
-      // Create/update: master_admin or assigned destination admin
-      allow create: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          isAssignedToDestination(request.resource.data.destinationId));
-
-      allow update: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          isAssignedToDestination(resource.data.destinationId));
-
-      // Cannot delete if status == 'published'
-      allow delete: if isMasterAdmin() && resource.data.status != 'published';
+    // ─── Trips Collection ───────────────────────────────────────────────────────
+    match /trips/{tripId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isMasterAdmin();
     }
 
-    // ─── itineraryItems ────────────────────────────────────────────────────────
+    // ─── Destinations Collection ────────────────────────────────────────────────
+    match /destinations/{destinationId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isMasterAdmin();
+      allow update: if isMasterAdmin() || isDestinationAdmin();
+    }
+
+    // ─── Assignments Collection ─────────────────────────────────────────────────
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isMasterAdmin();
+      allow update: if isMasterAdmin() || isDestinationAdmin();
+    }
+
+    // ─── Itinerary Days & Items ─────────────────────────────────────────────────
+    match /itineraryDays/{dayId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isMasterAdmin() || isDestinationAdmin();
+    }
 
     match /itineraryItems/{itemId} {
-      // Same read rules as parent itineraryDay
-      allow read: if isMasterAdmin() ||
-        (isAuthenticated() &&
-          tripMember(resource.data.tripId) &&
-          get(/databases/$(database)/documents/itineraryDays/$(resource.data.dayId)).data.status == 'published') ||
-        (isDestinationAdmin() &&
-          isAssignedToDestination(resource.data.destinationId));
-
-      // Create: master_admin or assigned destination admin
-      // Validate: sortOrder is a number, required fields present
-      allow create: if (isMasterAdmin() ||
-          (isDestinationAdmin() &&
-            isAssignedToDestination(request.resource.data.destinationId))) &&
-        request.resource.data.sortOrder is number &&
-        request.resource.data.title is string &&
-        request.resource.data.title.size() > 0 &&
-        request.resource.data.dayId is string &&
-        request.resource.data.tripId is string &&
-        request.resource.data.destinationId is string;
-
-      allow update: if (isMasterAdmin() ||
-          (isDestinationAdmin() &&
-            isAssignedToDestination(resource.data.destinationId))) &&
-        request.resource.data.sortOrder is number;
-
-      allow delete: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          isAssignedToDestination(resource.data.destinationId));
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isMasterAdmin() || isDestinationAdmin();
     }
 
-    // ─── hotels ────────────────────────────────────────────────────────────────
-
+    // ─── Hotels & Accommodations ────────────────────────────────────────────────
     match /hotels/{hotelId} {
       allow read: if isAuthenticated();
-      allow create, update: if isMasterAdmin() || isDestinationAdmin() || isAuthenticated();
-      allow delete: if isMasterAdmin();
+      allow create, update, delete: if isMasterAdmin() || isDestinationAdmin();
     }
 
-    // ─── transportBookings ─────────────────────────────────────────────────────
-
+    // ─── Transport & Logistics (Both names supported) ───────────────────────────
     match /transportBookings/{bookingId} {
       allow read: if isAuthenticated();
-      allow create, update: if isMasterAdmin() || isDestinationAdmin() || isAuthenticated();
-      allow delete: if isMasterAdmin();
+      allow create, update, delete: if isMasterAdmin() || isDestinationAdmin();
     }
 
-    // ─── expenses ──────────────────────────────────────────────────────────────
+    match /transports/{transportId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isMasterAdmin() || isDestinationAdmin();
+    }
 
+    // ─── Expenses & Budgets ─────────────────────────────────────────────────────
     match /expenses/{expenseId} {
-      // Read: master_admin and destination admin for their destination
-      allow read: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          resource.data.destinationId != null &&
-          isAssignedToDestination(resource.data.destinationId));
-
-      // Create/update: master_admin or destination admin for assigned destination
-      allow create: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          request.resource.data.destinationId != null &&
-          isAssignedToDestination(request.resource.data.destinationId));
-
-      allow update: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          resource.data.destinationId != null &&
-          isAssignedToDestination(resource.data.destinationId));
-
-      allow delete: if isMasterAdmin();
+      allow read: if isMasterAdmin() || isDestinationAdmin();
+      allow create, update, delete: if isMasterAdmin() || isDestinationAdmin();
     }
 
-    // ─── announcements ─────────────────────────────────────────────────────────
-
-    match /announcements/{announcementId} {
-      // Read: all authenticated trip members
-      allow read: if isAuthenticated() && tripMember(resource.data.tripId);
-
-      // Create/update/delete: master_admin only
-      allow create, update, delete: if isMasterAdmin();
+    // ─── Approvals & Reviews ───────────────────────────────────────────────────
+    match /approvals/{approvalId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isMasterAdmin() || isDestinationAdmin();
     }
 
-    // ─── notifications ─────────────────────────────────────────────────────────
-
-    match /notifications/{notificationId} {
-      // Read: owner only
-      allow read: if isAuthenticated() &&
-        resource.data.userId == request.auth.uid;
-
-      // Update isRead: owner only (can only flip isRead, not change other fields)
-      allow update: if isAuthenticated() &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
-
-      // Create: master_admin or Cloud Functions (via service account, treated as
-      // any write without auth context — handled by server-side admin SDK)
-      allow create: if isMasterAdmin();
-
-      allow delete: if false;
+    // ─── Notifications & Activity Logs ──────────────────────────────────────────
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
     }
-
-    // ─── approvalRequests ──────────────────────────────────────────────────────
-
-    match /approvalRequests/{requestId} {
-      // Read: master_admin, and the submitter
-      allow read: if isMasterAdmin() ||
-        (isAuthenticated() && resource.data.submittedBy == request.auth.uid);
-
-      // Create: assigned destination admin
-      allow create: if isDestinationAdmin() &&
-        isAssignedToDestination(request.resource.data.destinationId);
-
-      // Update: master_admin only
-      allow update: if isMasterAdmin();
-
-      allow delete: if isMasterAdmin();
-    }
-
-    // ─── activityLogs ──────────────────────────────────────────────────────────
 
     match /activityLogs/{logId} {
-      // Read: master_admin only
-      allow read: if isMasterAdmin();
-
-      // Create: authenticated users (for their own actions only)
-      allow create: if isAuthenticated() &&
-        request.resource.data.performedBy == request.auth.uid;
-
-      // No updates or deletes
+      allow read: if isMasterAdmin() || isDestinationAdmin();
+      allow create: if isAuthenticated();
       allow update, delete: if false;
     }
   }
