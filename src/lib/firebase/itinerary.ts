@@ -31,14 +31,14 @@ export async function getItineraryDay(dayId: string): Promise<ItineraryDay | nul
     if (!snapshot.exists()) return null;
     return { id: snapshot.id, ...snapshot.data() } as ItineraryDay;
   } catch (error) {
-    console.error(`[getItineraryDay] Failed to fetch day "${dayId}":`, error);
-    throw error;
+    console.warn(`[getItineraryDay] Failed to fetch day "${dayId}":`, error);
+    return null;
   }
 }
 
 /**
- * Fetch all itinerary days for a trip, ordered by dayNumber.
- * Optionally filter by destinationId.
+ * Fetch all itinerary days for a trip, optionally filtered by destinationId.
+ * Sorted in memory by dayNumber to avoid composite index requirements.
  */
 export async function getItineraryDays(
   tripId: string,
@@ -112,7 +112,7 @@ export async function deleteItineraryDay(dayId: string): Promise<void> {
 
 /**
  * Subscribe to real-time updates for itinerary days in a trip.
- * Returns an Unsubscribe function.
+ * Sorted in memory by dayNumber.
  */
 export function listenToItineraryDays(
   tripId: string,
@@ -159,7 +159,7 @@ export async function getItineraryItem(itemId: string): Promise<ItineraryItem | 
 }
 
 /**
- * Fetch all itinerary items for a given day, ordered by sortOrder.
+ * Fetch all itinerary items for a given day, sorted in memory by sortOrder.
  */
 export async function getItineraryItems(dayId: string): Promise<ItineraryItem[]> {
   try {
@@ -229,7 +229,7 @@ export async function deleteItineraryItem(itemId: string): Promise<void> {
 
 /**
  * Subscribe to real-time updates for itinerary items within a specific day.
- * Returns an Unsubscribe function.
+ * Sorted in memory by sortOrder.
  */
 export function listenToItineraryItems(
   dayId: string,
