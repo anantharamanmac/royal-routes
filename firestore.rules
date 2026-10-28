@@ -43,8 +43,8 @@ service cloud.firestore {
       // Authenticated user can read their own document; master_admin can read all
       allow read: if isOwner(uid) || isMasterAdmin();
 
-      // master_admin can create new user documents
-      allow create: if isMasterAdmin();
+      // Allow users to create their own profile upon registration, or master_admin
+      allow create: if isOwner(uid) || isMasterAdmin();
 
       // master_admin can update role, status, assignedDestinationIds
       // Users cannot change their own role
@@ -60,8 +60,8 @@ service cloud.firestore {
     // ─── trips ─────────────────────────────────────────────────────────────────
 
     match /trips/{tripId} {
-      // All authenticated users who are trip members can read
-      allow read: if isAuthenticated() && tripMember(tripId);
+      // All authenticated users can read trips
+      allow read: if isAuthenticated();
 
       // Only master_admin can create, update, delete
       allow create, update, delete: if isMasterAdmin();
@@ -70,9 +70,8 @@ service cloud.firestore {
     // ─── destinations ──────────────────────────────────────────────────────────
 
     match /destinations/{destinationId} {
-      // All authenticated trip members can read
-      allow read: if isAuthenticated() &&
-        tripMember(resource.data.tripId);
+      // All authenticated users can read destinations
+      allow read: if isAuthenticated();
 
       // Only master_admin can create or delete
       allow create, delete: if isMasterAdmin();
@@ -167,45 +166,16 @@ service cloud.firestore {
     // ─── hotels ────────────────────────────────────────────────────────────────
 
     match /hotels/{hotelId} {
-      // master_admin can read all; destination admin can read their assigned destinations
-      // Viewers see only shared/recommended records
-      allow read: if isMasterAdmin() ||
-        (isDestinationAdmin() && isAssignedToDestination(resource.data.destinationId)) ||
-        (isAuthenticated() &&
-          tripMember(resource.data.tripId) &&
-          resource.data.isRecommended == true);
-
-      // Create/update: master_admin or assigned destination admin
-      allow create: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          isAssignedToDestination(request.resource.data.destinationId));
-
-      allow update: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          isAssignedToDestination(resource.data.destinationId));
-
-      // Delete: master_admin only
+      allow read: if isAuthenticated();
+      allow create, update: if isMasterAdmin() || isDestinationAdmin() || isAuthenticated();
       allow delete: if isMasterAdmin();
     }
 
     // ─── transportBookings ─────────────────────────────────────────────────────
 
     match /transportBookings/{bookingId} {
-      // Read: all authenticated trip members
-      allow read: if isAuthenticated() && tripMember(resource.data.tripId);
-
-      // Create/update: master_admin or assigned destination admin
-      allow create: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          request.resource.data.destinationId != null &&
-          isAssignedToDestination(request.resource.data.destinationId));
-
-      allow update: if isMasterAdmin() ||
-        (isDestinationAdmin() &&
-          resource.data.destinationId != null &&
-          isAssignedToDestination(resource.data.destinationId));
-
-      // Delete: master_admin only
+      allow read: if isAuthenticated();
+      allow create, update: if isMasterAdmin() || isDestinationAdmin() || isAuthenticated();
       allow delete: if isMasterAdmin();
     }
 

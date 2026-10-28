@@ -24,9 +24,11 @@ import {
   onSnapshot,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/contexts/AuthContext";
@@ -197,10 +199,10 @@ export default function TransportManagerPage() {
     try {
       setIsSubmitting(true);
       const depTimestamp = formData.scheduledDeparture
-        ? new Date(formData.scheduledDeparture)
+        ? Timestamp.fromDate(new Date(formData.scheduledDeparture))
         : null;
       const arrTimestamp = formData.scheduledArrival
-        ? new Date(formData.scheduledArrival)
+        ? Timestamp.fromDate(new Date(formData.scheduledArrival))
         : null;
 
       const payload = {
@@ -223,7 +225,15 @@ export default function TransportManagerPage() {
       };
 
       if (editingTransport) {
-        await updateDoc(doc(db, "transportBookings", editingTransport.id), payload);
+        await setDoc(
+          doc(db, "transportBookings", editingTransport.id),
+          {
+            ...payload,
+            createdBy: editingTransport.createdBy || appUser?.uid || "admin",
+            createdAt: editingTransport.createdAt || serverTimestamp(),
+          },
+          { merge: true }
+        );
         toast.success("Transport record updated successfully.");
       } else {
         await addDoc(collection(db, "transportBookings"), {
@@ -235,8 +245,10 @@ export default function TransportManagerPage() {
       }
 
       setIsModalOpen(false);
-    } catch {
-      toast.error("Failed to save transport details.");
+    } catch (err) {
+      console.error("Failed to save transport details:", err);
+      const msg = err instanceof Error ? err.message : "Failed to save transport details.";
+      toast.error(`Save failed: ${msg}`);
     } finally {
       setIsSubmitting(false);
     }

@@ -23,9 +23,11 @@ import {
   onSnapshot,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useAuth } from "@/contexts/AuthContext";
@@ -208,8 +210,12 @@ export default function HotelManagerPage() {
 
     try {
       setIsSubmitting(true);
-      const checkInTimestamp = formData.checkInDate ? new Date(formData.checkInDate) : null;
-      const checkOutTimestamp = formData.checkOutDate ? new Date(formData.checkOutDate) : null;
+      const checkInTimestamp = formData.checkInDate
+        ? Timestamp.fromDate(new Date(formData.checkInDate))
+        : null;
+      const checkOutTimestamp = formData.checkOutDate
+        ? Timestamp.fromDate(new Date(formData.checkOutDate))
+        : null;
 
       const payload = {
         tripId: TRIP_ID,
@@ -233,7 +239,15 @@ export default function HotelManagerPage() {
       };
 
       if (editingHotel) {
-        await updateDoc(doc(db, "hotels", editingHotel.id), payload);
+        await setDoc(
+          doc(db, "hotels", editingHotel.id),
+          {
+            ...payload,
+            createdBy: editingHotel.createdBy || appUser?.uid || "admin",
+            createdAt: editingHotel.createdAt || serverTimestamp(),
+          },
+          { merge: true }
+        );
         toast.success("Hotel booking updated successfully.");
       } else {
         await addDoc(collection(db, "hotels"), {
@@ -245,8 +259,10 @@ export default function HotelManagerPage() {
       }
 
       setIsModalOpen(false);
-    } catch {
-      toast.error("Failed to save hotel details.");
+    } catch (err) {
+      console.error("Failed to save hotel details:", err);
+      const msg = err instanceof Error ? err.message : "Failed to save hotel details.";
+      toast.error(`Save failed: ${msg}`);
     } finally {
       setIsSubmitting(false);
     }
